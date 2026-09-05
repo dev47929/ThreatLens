@@ -4,7 +4,6 @@ import {
   Plus,
   ExternalLink,
   Download,
-  Sparkles,
   WifiOff,
   Loader2,
   GitCommit,
@@ -58,10 +57,6 @@ export default function RepositoriesTab({ onSelectRepo, onInspectCommit }) {
   const totalCommits = repos.reduce((s, r) => s + (r.commit_count || 0), 0);
   const totalFiles = repos.reduce((s, r) => s + (r.files_total || 0), 0);
   const totalSize = repos.reduce((s, r) => s + (r.total_size || 0), 0);
-
-  const handleScanRepo = (repoName) => {
-    toast.info(`Initiating AST security audit on ${repoName}...`);
-  };
 
   const handleExportRepoSummary = () => {
     toast.success("Exported repository architecture & security manifest (JSON)");
@@ -277,17 +272,6 @@ export default function RepositoriesTab({ onSelectRepo, onInspectCommit }) {
                     >
                       <GitCommit className="w-3.5 h-3.5" />
                       <span>View Commits →</span>
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleScanRepo(repo.name);
-                      }}
-                      className="px-3 py-1.5 rounded font-mono text-xs bg-[#141b21] border border-[#2b3947] text-[#d8e2e8] hover:border-[#38bdf8]/40 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#38bdf8]" />
-                      <span>AST Scan</span>
                     </button>
                   </div>
 
