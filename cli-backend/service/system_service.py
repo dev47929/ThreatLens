@@ -2,14 +2,16 @@ from config import config
 import httpx
 from db import get_jwt
 
-header={
-    "Authorization": f"Bearer {get_jwt()}",
-}
+def get_header():
+    jwt = get_jwt()
+    if jwt:
+        return {"Authorization": f"Bearer {jwt}"}
+    return {}
 
 def chk_state():
     response = httpx.get(
         f"{config.AUTH_BASE_URL}/me",
-        headers=header
+        headers=get_header(),
     )
     return response.json()
 
@@ -19,7 +21,7 @@ def global_sync_usage(body):
     response = httpx.put(
         f"{config.BASE_URL}/usage",
         json=body,
-        headers=header
+        headers=get_header(),
     )
     response.raise_for_status()
     return response.json()
@@ -28,7 +30,7 @@ def global_sync_usage(body):
 def get_global_limit():
     response = httpx.put(
         f"{config.BASE_URL}/usage",
-        headers=header
+        headers=get_header(),
     )
     response.raise_for_status()
 

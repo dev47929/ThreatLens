@@ -107,6 +107,7 @@ export default function DashboardLayout() {
   });
   const [clockStr, setClockStr] = useState("--:--:--");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedRepoId, setSelectedRepoId] = useState(null);
   const [selectedAttack, setSelectedAttack] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -114,6 +115,11 @@ export default function DashboardLayout() {
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [copied, setCopied] = useState(false);
   const tokensRef = useRef(null);
+
+  const handleSelectRepo = (repoId) => {
+    setSelectedRepoId(repoId);
+    setActiveNav("commits");
+  };
 
   const toggleCategory = (catId) => {
     setCollapsedCategories((prev) => ({
@@ -910,7 +916,7 @@ export default function DashboardLayout() {
                       return (
                         <div
                           key={i}
-                          onClick={() => setActiveNav("repositories")}
+                          onClick={() => handleSelectRepo(r.id)}
                           className="bg-[#10151a] border border-[#283747] hover:border-[#38bdf8]/40 rounded-xl p-4 space-y-3.5 shadow-sm transition-all cursor-pointer"
                         >
                           <div className="flex items-start justify-between">
@@ -980,9 +986,20 @@ export default function DashboardLayout() {
             </>
           )}
 
-          {activeNav === "repositories" && <RepositoriesTab onInspectCommit={handleOpenDetail} />}
+          {activeNav === "repositories" && (
+            <RepositoriesTab
+              onSelectRepo={handleSelectRepo}
+              onInspectCommit={handleOpenDetail}
+            />
+          )}
 
-          {activeNav === "commits" && <CommitsTab onInspectCommit={handleOpenDetail} />}
+          {activeNav === "commits" && (
+            <CommitsTab
+              selectedRepoId={selectedRepoId}
+              onSelectRepoId={setSelectedRepoId}
+              onInspectCommit={handleOpenDetail}
+            />
+          )}
 
           {activeNav === "live-attacks" && <LiveAttacksTab />}
 

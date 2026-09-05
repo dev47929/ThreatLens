@@ -4,7 +4,7 @@ load_dotenv()
 
 
 class Config:
-    BASE_URL = "https://api.codesena.me"
+    BASE_URL = os.getenv("BASE_URL", "https://api.codesena.me")
     AUTH_BASE_URL = f"{BASE_URL}/tc-auth"
 
     DB_PATH = "local.db"

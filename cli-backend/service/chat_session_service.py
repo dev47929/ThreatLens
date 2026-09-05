@@ -3,11 +3,11 @@ from config import config
 from db import get_jwt
 
 
-jwt = get_jwt()
-
-headers = {
-    "Authorization": f"Bearer {jwt}",
-}
+def get_headers() -> dict:
+    jwt = get_jwt()
+    if jwt:
+        return {"Authorization": f"Bearer {jwt}"}
+    return {}
 
 
 def create_chat(
@@ -25,7 +25,7 @@ def create_chat(
     response = httpx.post(
         f"{config.BASE_URL}/chats",
         json=payload,
-        headers=headers,
+        headers=get_headers(),
     )
 
     response.raise_for_status()
@@ -36,7 +36,7 @@ def create_chat(
 def get_chats():
     response = httpx.get(
         f"{config.BASE_URL}/chats",
-        headers=headers,
+        headers=get_headers(),
     )
 
     response.raise_for_status()
@@ -47,7 +47,7 @@ def get_chats():
 def delete_chat(chat_id: int):
     response = httpx.delete(
         f"{config.BASE_URL}/chats/{chat_id}",
-        headers=headers,
+        headers=get_headers(),
     )
 
     response.raise_for_status()

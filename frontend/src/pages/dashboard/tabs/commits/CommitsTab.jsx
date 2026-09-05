@@ -20,15 +20,27 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { repoApi, severityColor, timeAgo } from "@/lib/api";
 
-export default function CommitsTab({ onInspectCommit }) {
+export default function CommitsTab({
+  onInspectCommit,
+  selectedRepoId: initialRepoId,
+  onSelectRepoId,
+}) {
   const { token } = useAuth();
   const [repos, setRepos] = useState([]);
-  const [selectedRepoId, setSelectedRepoId] = useState(null);
+  const [selectedRepoId, setSelectedRepoId] = useState(initialRepoId || null);
   const [commits, setCommits] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [loading, setLoading] = useState(true);
   const [loadingCommits, setLoadingCommits] = useState(false);
+
+  // Sync state if initialRepoId prop changes from navigation
+  useEffect(() => {
+    if (initialRepoId) {
+      setSelectedRepoId(initialRepoId);
+      setPage(1);
+    }
+  }, [initialRepoId]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
@@ -46,7 +58,15 @@ export default function CommitsTab({ onInspectCommit }) {
         const repoList = Array.isArray(data) ? data : [];
         setRepos(repoList);
         if (repoList.length > 0) {
-          setSelectedRepoId(repoList[0].id);
+          setSelectedRepoId((current) => {
+            if (initialRepoId && repoList.some((r) => r.id === initialRepoId)) {
+              return initialRepoId;
+            }
+            if (current && repoList.some((r) => r.id === current)) {
+              return current;
+            }
+            return repoList[0].id;
+          });
         }
       } catch {
         toast.error("Failed to load repositories");
@@ -55,7 +75,7 @@ export default function CommitsTab({ onInspectCommit }) {
       }
     };
     fetchRepos();
-  }, [token]);
+  }, [token, initialRepoId]);
 
   // Fetch commits when repo or page changes
   useEffect(() => {
@@ -148,7 +168,12 @@ export default function CommitsTab({ onInspectCommit }) {
           {repos.length > 0 && (
             <select
               value={selectedRepoId || ""}
-              onChange={(e) => { setSelectedRepoId(Number(e.target.value)); setPage(1); }}
+              onChange={(e) => {
+                const newId = Number(e.target.value);
+                setSelectedRepoId(newId);
+                if (onSelectRepoId) onSelectRepoId(newId);
+                setPage(1);
+              }}
               className="px-3 py-2 bg-[#10151a] border border-[#283747] rounded-lg text-xs text-white focus:border-[#6EA8DA] focus:outline-none font-medium"
             >
               {repos.map((r) => (

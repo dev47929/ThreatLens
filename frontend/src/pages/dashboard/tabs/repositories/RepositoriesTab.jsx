@@ -7,6 +7,7 @@ import {
   Sparkles,
   WifiOff,
   Loader2,
+  GitCommit,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -188,8 +189,13 @@ export default function RepositoriesTab({ onSelectRepo, onInspectCommit }) {
             return (
               <div
                 key={repo.id}
-                onClick={() => setActiveRepoId(repo.id)}
-                className={`bg-[#10151a] border rounded-xl p-5 space-y-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] cursor-pointer transition-all ${
+                onClick={() => {
+                  setActiveRepoId(repo.id);
+                  if (onSelectRepo) {
+                    onSelectRepo(repo.id);
+                  }
+                }}
+                className={`bg-[#10151a] border rounded-xl p-5 space-y-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] cursor-pointer transition-all hover:border-[#6EA8DA]/50 ${
                   isSelected
                     ? "border-[#38bdf8] shadow-[0_0_15px_rgba(56,189,248,0.2)] bg-[#121820]"
                     : "border-[#263544] hover:border-[#2f4255]"
@@ -199,7 +205,7 @@ export default function RepositoriesTab({ onSelectRepo, onInspectCommit }) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-mono font-bold text-sm text-white">{repo.name}</h3>
+                      <h3 className="font-mono font-bold text-sm text-white group-hover:text-[#6EA8DA]">{repo.name}</h3>
                       <span className="font-mono text-[10px] text-[#38bdf8] bg-[#38bdf8]/10 border border-[#38bdf8]/30 px-1.5 py-0.5 rounded">
                         {repo.default_branch || "main"}
                       </span>
@@ -258,17 +264,32 @@ export default function RepositoriesTab({ onSelectRepo, onInspectCommit }) {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="pt-2 border-t border-[#253240] flex items-center justify-between">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleScanRepo(repo.name);
-                    }}
-                    className="px-3 py-1.5 rounded font-mono text-xs bg-[#141b21] border border-[#2b3947] text-[#d8e2e8] hover:border-[#38bdf8]/40 hover:text-white flex items-center gap-1.5 transition-all"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-[#38bdf8]" />
-                    <span>Run AST Scan</span>
-                  </button>
+                <div className="pt-2 border-t border-[#253240] flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onSelectRepo) {
+                          onSelectRepo(repo.id);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded font-mono text-xs bg-[#2962FF]/15 border border-[#2962FF]/40 text-[#6EA8DA] hover:bg-[#2962FF] hover:text-white flex items-center gap-1.5 transition-all cursor-pointer font-semibold"
+                    >
+                      <GitCommit className="w-3.5 h-3.5" />
+                      <span>View Commits →</span>
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleScanRepo(repo.name);
+                      }}
+                      className="px-3 py-1.5 rounded font-mono text-xs bg-[#141b21] border border-[#2b3947] text-[#d8e2e8] hover:border-[#38bdf8]/40 hover:text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#38bdf8]" />
+                      <span>AST Scan</span>
+                    </button>
+                  </div>
 
                   <a
                     href={repo.url}

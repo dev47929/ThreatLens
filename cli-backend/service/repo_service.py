@@ -5,16 +5,18 @@ from analysis import (
     RepositoryAnalyzer,
 )
 
+from fastapi import HTTPException
 from db import get_jwt
 from repo import Repository
 from config import config
-jwt = get_jwt()
 
 
 def build_repo(repo: Repository, jwt: str):
-
     if not jwt:
-        raise RuntimeError("JWT token not found")
+        raise HTTPException(
+            status_code=401,
+            detail="JWT token not found. Please authenticate first via /password/login or OAuth.",
+        )
 
     structure = RepositoryAnalyzer(repo)
     data = structure.analyze().to_dict()
@@ -25,16 +27,19 @@ def build_repo(repo: Repository, jwt: str):
         headers={
             "Authorization": f"Bearer {jwt}",
         },
-        timeout=30.0,
+        timeout=60.0,
     )
 
     response.raise_for_status()
     return response.json()
 
 
-def fetch_latest_commit(repo_id: int, jwt: str):
+def fetch_latest_commit(repo_id: int, jwt: str) -> str | None:
     if not jwt:
-        raise RuntimeError("JWT token not found")
+        raise HTTPException(
+            status_code=401,
+            detail="JWT token not found",
+        )
     
     response = httpx.get(
         f"{config.BASE_URL}/repo/{repo_id}/commits?limit=1",
@@ -45,7 +50,10 @@ def fetch_latest_commit(repo_id: int, jwt: str):
     )
     response.raise_for_status()
     res = response.json()
-    return res["data"][0]["commit"]["sha"]
+    data = res.get("data", [])
+    if not data or not isinstance(data, list):
+        return None
+    return data[0].get("commit", {}).get("sha")
 
 
 
@@ -77,10 +85,13 @@ def build_commit_insert(repo: Repository, sha: str | None):
 
 def insert_commits(repo_id: int, commits: list[dict], jwt: str):
     if not commits:
-        return{"status" : "Already upto date"}
+        return {"status": "Already upto date"}
 
     if not jwt:
-        raise RuntimeError("JWT token not found")
+        raise HTTPException(
+            status_code=401,
+            detail="JWT token not found",
+        )
 
     response = httpx.post(
         f"{config.BASE_URL}/repo/{repo_id}/commits",
@@ -90,29 +101,42 @@ def insert_commits(repo_id: int, commits: list[dict], jwt: str):
         headers={
             "Authorization": f"Bearer {jwt}",
         },
-        timeout=30.0,
+        timeout=60.0,
     )
 
     response.raise_for_status()
     return response.json()
 
+
 def save_commits(url: str):
+    jwt = get_jwt()
+    if not jwt:
+        raise HTTPException(
+            status_code=401,
+            detail="JWT token not found in local session. Please authenticate first.",
+        )
+
     repo = Repository(url)
-    response = build_repo(repo=repo, jwt=jwt)
-    if response["status"] == "created":
-        commits= build_commit_insert(repo=repo, sha=None)
-        return insert_commits(repo_id=response["repo_id"],commits=commits,jwt=jwt)
-    
-    elif response["status"] == "already_up_to_date":
-        return {
-            "status" : "Already upto date",
-            "count" : None
-        }
-    
-    else : 
-        sha = fetch_latest_commit(repo_id=response["repo_id"], jwt= jwt)
-        commits= build_commit_insert(repo=repo, sha=sha)
-        return insert_commits(repo_id=response["repo_id"],commits=commits,jwt=jwt)
+    try:
+        response = build_repo(repo=repo, jwt=jwt)
+        status = response.get("status")
+
+        if status == "created":
+            commits = build_commit_insert(repo=repo, sha=None)
+            return insert_commits(repo_id=response["repo_id"], commits=commits, jwt=jwt)
+        
+        elif status == "already_up_to_date":
+            return {
+                "status": "Already upto date",
+                "count": None,
+            }
+        
+        else:
+            sha = fetch_latest_commit(repo_id=response["repo_id"], jwt=jwt)
+            commits = build_commit_insert(repo=repo, sha=sha)
+            return insert_commits(repo_id=response["repo_id"], commits=commits, jwt=jwt)
+    finally:
+        repo.close()
 
 
 """
