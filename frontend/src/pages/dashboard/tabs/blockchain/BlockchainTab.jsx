@@ -29,12 +29,10 @@ import {
   isMetaMaskAvailable,
 } from "@/lib/ethereum";
 
-import BlockChainVisualizer from "./BlockChainVisualizer";
+import BlockchainVisualizer from "./BlockChainVisualizer";
 import AppendBlockModal from "./AppendBlockModal";
-import BuildChainModal from "./BuildChainModal";
 import CreateChainModal from "./CreateChainModal";
 import DeleteChainModal from "./DeleteChainModal";
-import BlockDetailModal from "./BlockDetailModal";
 import WalletDetailsModal from "./WalletDetailsModal";
 import EthereumAnchorCard from "./EthereumAnchorCard";
 import TamperSimulatorModal from "./TamperSimulatorModal";
