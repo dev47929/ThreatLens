@@ -74,9 +74,21 @@ export class AutonomousAgentLoop implements AgentController {
       try {
         this.messages = pruneMessageHistory(this.messages);
 
+        this.emit({
+          type: 'status',
+          message:
+            iteration === 1
+              ? 'Analyzing request and planning codebase inspection...'
+              : `Analyzing codebase results (Step ${iteration}/${this.config.maxIterations})...`,
+        });
+
         const responseMessage = await this.llmClient.chat(this.messages, tools, {
           onToken: (token) => this.emit({ type: 'token', delta: token }),
-          onToolCallStart: (name, callId) => this.emit({ type: 'tool_start', toolName: name, args: {}, callId }),
+          onReasoning: (delta) => this.emit({ type: 'reasoning', delta }),
+          onToolCallStart: (name, callId) => {
+            this.emit({ type: 'status', message: `Preparing tool invocation: [${name}]...` });
+            this.emit({ type: 'tool_start', toolName: name, args: {}, callId });
+          },
         });
 
         this.messages.push(responseMessage);
@@ -111,6 +123,11 @@ export class AutonomousAgentLoop implements AgentController {
           }
 
           this.emit({
+            type: 'status',
+            message: `Executing tool [${tc.function.name}]...`,
+          });
+
+          this.emit({
             type: 'tool_start',
             toolName: tc.function.name,
             args,
@@ -143,6 +160,11 @@ export class AutonomousAgentLoop implements AgentController {
             result: result.data || result.error,
             callId: tc.id,
             isError: !result.success,
+          });
+
+          this.emit({
+            type: 'status',
+            message: `Completed [${tc.function.name}] · Processing results...`,
           });
 
           const safeData = truncateToolData(result.success ? result.data : { error: result.error });

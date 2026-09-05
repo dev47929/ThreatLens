@@ -23,6 +23,7 @@ export interface LLMMessage {
 
 export interface LLMStreamCallbacks {
   onToken?: (token: string) => void;
+  onReasoning?: (delta: string) => void;
   onToolCallStart?: (toolName: string, callId: string) => void;
   onUsage?: (usage: LLMUsage) => void;
 }

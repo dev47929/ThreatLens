@@ -52,6 +52,7 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
   const [activeApproval, setActiveApproval] = useState<DiffApprovalPayload | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Initializing codebase index and agent engine...');
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [thinkingText, setThinkingText] = useState<string>('');
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [limits, setLimits] = useState<LimitData | null>(null);
 
@@ -222,6 +223,7 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
       switch (event.type) {
         case 'token':
           setIsRunning(true);
+          setThinkingText('');
           textBufferRef.current += event.delta;
           // 80ms batch buffer — optimal balance between responsiveness and terminal redraw frequency
           if (!flushTimerRef.current) {
@@ -230,6 +232,11 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
               flushTextBuffer();
             }, 80);
           }
+          break;
+
+        case 'reasoning':
+          setIsRunning(true);
+          setThinkingText((prev) => (prev + event.delta).slice(-160));
           break;
 
         case 'status':
@@ -243,6 +250,7 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
           }
           flushTextBuffer();
           setIsRunning(true);
+          setThinkingText('');
           setTools((prev) => [
             ...prev.filter((t) => t.callId !== event.callId),
             {
@@ -295,6 +303,7 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
           }
           flushTextBuffer();
           setIsRunning(false);
+          setThinkingText('');
           setActiveApproval(null);
           setStatusMessage(`Finished: ${event.summary}`);
           setCurrentAgentText((prev) => {
@@ -318,6 +327,7 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
           }
           flushTextBuffer();
           setIsRunning(false);
+          setThinkingText('');
           setActiveApproval(null);
           setStatusMessage(`Error: ${event.error}`);
           setCurrentAgentText((prev) => {
@@ -562,10 +572,10 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
           </Box>
         ) : null}
 
-        {/* Completed tools (compact, no animation) */}
-        {doneTools.length > 0 && !isRunning ? (
+        {/* Completed tools (compact, shows latest progress) */}
+        {doneTools.length > 0 ? (
           <Box flexDirection="column" marginY={0}>
-            {doneTools.slice(-2).map((t) => (
+            {doneTools.slice(-3).map((t) => (
               <ToolBadge
                 key={t.callId}
                 toolName={t.toolName}
@@ -574,6 +584,15 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
                 result={t.result}
               />
             ))}
+          </Box>
+        ) : null}
+
+        {/* Live Thinking / Reasoning Snippet */}
+        {thinkingText && isRunning && !currentAgentText ? (
+          <Box flexDirection="column" marginY={1} paddingX={1}>
+            <Text color={theme.textMuted} italic dimColor>
+              💭 Thinking: {thinkingText.trim()}...
+            </Text>
           </Box>
         ) : null}
 

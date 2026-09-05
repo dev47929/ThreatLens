@@ -51,6 +51,13 @@ export async function parseOpenAISSEStream(
           const delta = chunk.choices && chunk.choices[0] && chunk.choices[0].delta;
           if (!delta) continue;
 
+          const reasoningDelta =
+            delta.reasoning ||
+            (delta.reasoning_details && delta.reasoning_details[0]?.text);
+          if (reasoningDelta && callbacks?.onReasoning) {
+            callbacks.onReasoning(reasoningDelta);
+          }
+
           if (delta.content) {
             fullContent += delta.content;
             if (callbacks?.onToken) {
