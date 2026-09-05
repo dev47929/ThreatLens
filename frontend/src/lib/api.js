@@ -381,6 +381,56 @@ export const attackApi = {
       throw err;
     }
   },
+
+  // Get attacks history list from backend
+  async getAttacks({ attack_type = null, page = 1, limit = 10 } = {}, token = null) {
+    const params = new URLSearchParams();
+    if (attack_type) params.append("attack_type", attack_type);
+    if (page) params.append("page", page);
+    if (limit) params.append("limit", limit);
+
+    const headers = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/attack?${params.toString()}`, {
+        headers,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+      }
+    } catch {
+      // Return null on fallback
+    }
+    return null;
+  },
+
+  // Log new attack execution
+  async postAttack(attackPayload, token = null) {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/attack`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(attackPayload),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Return null on fallback
+    }
+    return null;
+  },
 };
 
 // ── Internal Blockchain & Integrity Checkpoint API ──
@@ -805,3 +855,6 @@ export const CommitsAPI = {
     };
   },
 };
+
+
+

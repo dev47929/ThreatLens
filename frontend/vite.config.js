@@ -43,6 +43,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "/attack": {
+          target: apiBaseUrl,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };
