@@ -25,10 +25,10 @@ function parseTargetUrl(raw: string): { base_url: string; endpoint: string } {
 
 export const RateLimitScreen: React.FC = () => {
   const { pop } = useNavigation();
-  const { targetUrl } = useSecuritySession();
+  const { targetConfig, requestConfig } = useSecuritySession();
 
   const [step, setStep] = useState<'config' | 'running' | 'done'>('config');
-  const [urlInput, setUrlInput] = useState(targetUrl || 'http://localhost:8001/health');
+  const [urlInput, setUrlInput] = useState(`${targetConfig.base_url}${targetConfig.endpoint}`);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [attackResult, setAttackResult] = useState<AttackStatus | null>(null);
 
@@ -40,14 +40,14 @@ export const RateLimitScreen: React.FC = () => {
     target: {
       base_url: parsed.base_url,
       endpoint: parsed.endpoint,
-      method: 'GET',
-      path_params: null,
-      query_params: null,
+      method: targetConfig.method || 'GET',
+      path_params: targetConfig.path_params,
+      query_params: targetConfig.query_params,
     },
     request: {
-      headers: null,
-      auth: null,
-      body: null,
+      headers: requestConfig.headers,
+      auth: requestConfig.auth,
+      body: requestConfig.body,
     },
     attack: {
       duration: 5,
