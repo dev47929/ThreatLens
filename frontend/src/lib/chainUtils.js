@@ -1,44 +1,20 @@
 /**
- * ThreatLens Blockchain Utilities
- * Provides canonical SHA-256 block hashing and chain presets matching ThreatLens backend spec.
+ * ThreatLens Internal Blockchain Utilities
+ * Hashing, block generation, verification modes & attack types
  */
 
-export const POPULAR_ATTACK_TYPES = [
-  { id: "ddos", label: "DDoS Attack (Distributed Denial of Service)" },
-  { id: "data_burning", label: "Data Burning Attack" },
-  { id: "sqli", label: "SQL Injection (SQLi)" },
-  { id: "xss", label: "Cross-Site Scripting (XSS)" },
-  { id: "origin_proxy", label: "Origin Proxy Exhaustion" },
-  { id: "credential_stuffing", label: "Credential Stuffing" },
-];
+import { formatBytes32Hash } from "./ethereum";
+import { timeAgo } from "./api";
 
 /**
- * Deterministic JSON stringifier with key sorting and strict separators (',', ':'),
- * matching Python json.dumps(..., sort_keys=True, separators=(',', ':'), ensure_ascii=False).
+ * Computes a SHA-256 hex string using browser Web Crypto API
  */
-export function canonicalStringify(obj) {
-  if (obj === null || typeof obj !== "object") {
-    return JSON.stringify(obj);
-  }
-  if (Array.isArray(obj)) {
-    return "[" + obj.map(canonicalStringify).join(",") + "]";
-  }
-  const sortedKeys = Object.keys(obj).sort();
-  const pairs = sortedKeys.map(
-    (key) => `${JSON.stringify(key)}:${canonicalStringify(obj[key])}`
-  );
-  return "{" + pairs.join(",") + "}";
-}
-
-/**
- * Compute SHA-256 hex digest of a string using Web Crypto API.
- */
-export async function sha256Hex(str) {
+export async function computeSha256(data) {
+  const text = typeof data === "string" ? data : JSON.stringify(data);
   const cryptoObj = typeof window !== "undefined" ? window.crypto : globalThis.crypto;
   if (cryptoObj?.subtle) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await cryptoObj.subtle.digest("SHA-256", data);
+    const msgBuffer = new TextEncoder().encode(text);
+    const hashBuffer = await cryptoObj.subtle.digest("SHA-256", msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   }
@@ -46,26 +22,68 @@ export async function sha256Hex(str) {
 }
 
 /**
- * Compute candidate next block with canonical SHA-256 current hash
+ * Computes the deterministic SHA-256 hash for a block
  */
-export async function createNextBlock(latestBlock, blockType, data = {}) {
-  const nextIndex = latestBlock ? Number(latestBlock.index) + 1 : 0;
-  const prevHash = latestBlock ? latestBlock.current : null;
-  const createdAt = new Date().toISOString();
+export async function computeBlockHash(block) {
+  // Canonical representation of the block data for SHA-256 calculation
+  const canonicalPayload = JSON.stringify({
+    index: block.index,
+    type: block.type,
+    data: block.data,
+    created_at: block.created_at,
+    prev: block.prev || null,
+  });
+  return await computeSha256(canonicalPayload);
+}
 
-  const blockWithoutCurrent = {
-    index: nextIndex,
-    type: blockType || "custom_event",
-    data: data,
-    created_at: createdAt,
-    prev: prevHash,
+/**
+ * Constructs a valid next block ready to be appended to a chain
+ */
+export async function createNextBlock(prevBlock, type, data) {
+  const index = prevBlock ? Number(prevBlock.index) + 1 : 0;
+  const prev = prevBlock ? (prevBlock.current || null) : null;
+  const created_at = new Date().toISOString();
+
+  const blockCandidate = {
+    index,
+    type: type || "custom_state",
+    data: data || {},
+    created_at,
+    prev,
   };
 
-  const canonical = canonicalStringify(blockWithoutCurrent);
-  const current = await sha256Hex(canonical);
+  const current = await computeBlockHash(blockCandidate);
 
   return {
-    ...blockWithoutCurrent,
+    ...blockCandidate,
     current,
   };
 }
+
+/**
+ * Verification modes supported by FastAPI @router.get("/{chain_id}/verify")
+ */
+export const VERIFY_MODES = [
+  { id: "last", label: "Last N Blocks", description: "Verify from the tail backwards by N blocks" },
+  { id: "full", label: "Full Chain Audit", description: "Audit from genesis block (0) to latest block" },
+  { id: "latest", label: "Latest Block Only", description: "Verify cryptographic link of the head block" },
+  { id: "single", label: "Single Specific Block", description: "Verify specific block target index" },
+  { id: "from", label: "From Target to Head", description: "Verify starting from target index up to head" },
+  { id: "till", label: "Genesis Till Target", description: "Verify from genesis index 0 up to target" },
+];
+
+/**
+ * Predefined attack types specified by backend schema:
+ * ddos, data_burning, xss, sqli, proxy_origin
+ */
+export const ATTACK_TYPES = [
+  { id: "ddos", label: "DDoS", description: "Distributed Denial of Service attack telemetry" },
+  { id: "data_burning", label: "Data Burning", description: "Data depletion / exfiltration telemetry" },
+  { id: "xss", label: "XSS", description: "Cross-Site Scripting detection payload" },
+  { id: "sqli", label: "SQLi", description: "SQL Injection query attempt snapshot" },
+  { id: "proxy_origin", label: "Proxy Origin", description: "Proxy origin header spoofing telemetry" },
+];
+
+export const POPULAR_ATTACK_TYPES = ATTACK_TYPES;
+
+export { formatBytes32Hash, timeAgo };

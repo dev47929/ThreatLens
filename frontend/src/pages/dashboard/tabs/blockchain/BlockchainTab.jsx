@@ -18,6 +18,7 @@ import {
   Activity,
   Trash2,
   ExternalLink,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,11 +37,14 @@ import DeleteChainModal from "./DeleteChainModal";
 import WalletDetailsModal from "./WalletDetailsModal";
 import EthereumAnchorCard from "./EthereumAnchorCard";
 import TamperSimulatorModal from "./TamperSimulatorModal";
+import VerifyChainModal from "./VerifyChainModal";
+import AttestationView from "./AttestationView";
 
 export default function BlockchainTab({
   onInspectBlock,
 }) {
   const { user, token } = useAuth();
+  const [activeView, setActiveView] = useState("explorer"); // "explorer" | "attestation"
   const [chains, setChains] = useState([]);
   const [selectedChainId, setSelectedChainId] = useState("");
   const [blocks, setBlocks] = useState([]);
@@ -56,6 +60,7 @@ export default function BlockchainTab({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isTamperOpen, setIsTamperOpen] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
 
   // Web3 / Wallet State
   const [walletAddress, setWalletAddress] = useState("0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7");
@@ -227,39 +232,6 @@ export default function BlockchainTab({
     }
   };
 
-  // Trigger sequential cryptographic verification scan
-  const handleVerify = async () => {
-    if (!selectedChainId || blocks.length === 0) {
-      toast.error("No blocks to verify");
-      return;
-    }
-    setVerificationStatus("verifying");
-    const toastId = toast.loading(`Auditing cryptographic SHA-256 hash tree for ${selectedChainId}...`);
-
-    try {
-      const verifyResult = await chainApi.verifyChain(token, selectedChainId, "full");
-      if (verifyResult?.status !== false) {
-        setVerificationStatus("verified");
-        toast.success(
-          `Audit Complete: All ${blocks.length} blocks validated · Cryptographic hash linkage 100% intact`,
-          { id: toastId }
-        );
-      } else {
-        setVerificationStatus("tampered");
-        toast.error(
-          `Integrity breach at block #${verifyResult.block_index}: ${verifyResult.failure_type || "SHA-256 hash mismatch"}`,
-          { id: toastId }
-        );
-      }
-    } catch {
-      setVerificationStatus("verified");
-      toast.success(
-        `Audit Complete: SHA-256 canonical hash linkage intact`,
-        { id: toastId }
-      );
-    }
-  };
-
   return (
     <div className="space-y-6 select-none font-sans">
       {/* ── TOP HEADER: TITLE, CHAIN SELECTOR, ACTIONS ── */}
@@ -316,12 +288,12 @@ export default function BlockchainTab({
             <span>Tamper Test</span>
           </button>
 
-          {/* Verify Integrity */}
+          {/* Verify Integrity (Opens 6-mode verification engine modal) */}
           <button
-            onClick={handleVerify}
+            onClick={() => setIsVerifyModalOpen(true)}
             disabled={loadingBlocks || verificationStatus === "verifying"}
             className="px-3 py-2 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 text-[#86efac] hover:bg-[#22c55e]/20 font-mono text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Run SHA-256 verification across all blocks"
+            title="Open cryptographic verification engine (6 verification modes)"
           >
             <ShieldCheck className={`w-3.5 h-3.5 ${verificationStatus === "verifying" ? "animate-pulse" : ""}`} />
             <span>{verificationStatus === "verifying" ? "Verifying..." : "Verify Chain"}</span>
@@ -362,160 +334,224 @@ export default function BlockchainTab({
         </div>
       </div>
 
-      {/* ── ACTIVE CHAIN SELECTOR & TIP HASH STRIP ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0b0f19] border border-[#1c2638]">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-[11px] font-mono text-[#8a99ad] uppercase tracking-wider font-semibold">
-            Active Chain:
-          </span>
+      {/* ── VIEW SWITCHER TABS ── */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 p-1 bg-[#090e16] border border-[#1a2534] rounded-xl w-fit">
+          <button
+            onClick={() => setActiveView("explorer")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold font-mono flex items-center gap-2 transition-all cursor-pointer ${
+              activeView === "explorer"
+                ? "bg-[#141f2d] text-white border border-[#2b3e55] shadow-md shadow-[#38bdf8]/5"
+                : "text-[#8a99ad] hover:text-white"
+            }`}
+          >
+            <Blocks className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <span>Chain Explorer</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/40 text-slate-400">
+              {chainHeight}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveView("attestation")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold font-mono flex items-center gap-2 transition-all cursor-pointer ${
+              activeView === "attestation"
+                ? "bg-[#141f2d] text-white border border-[#2b3e55] shadow-md shadow-[#38bdf8]/5"
+                : "text-[#8a99ad] hover:text-white"
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Attestation & Anchors</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-mono font-bold">
+              Sepolia
+            </span>
+          </button>
+        </div>
+      </div>
 
-          {loadingChains ? (
-            <div className="h-7 w-40 bg-[#162032] rounded animate-pulse" />
-          ) : chains.length === 0 ? (
-            <span className="text-xs text-amber-400 font-mono">No chains found. Click "New Chain" to create one.</span>
-          ) : (
-            <div className="relative">
-              <select
-                value={selectedChainId}
-                onChange={(e) => setSelectedChainId(e.target.value)}
-                className="appearance-none bg-[#0e1626] border border-[#1e293b] hover:border-[#334155] text-slate-200 text-xs font-medium py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer transition-all"
-              >
-                {chains.map((cid) => (
-                  <option key={cid} value={cid} className="bg-[#0b1019] text-white">
-                    {cid}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#64748b] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* ── CONDITIONAL VIEW 1: CHAIN EXPLORER ── */}
+      {activeView === "explorer" && (
+        <div className="space-y-6 animate-in fade-in duration-150">
+          {/* Active Chain Selector & Tip Hash Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0b0f19] border border-[#1c2638]">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-[11px] font-mono text-[#8a99ad] uppercase tracking-wider font-semibold">
+                Active Chain:
+              </span>
+
+              {loadingChains ? (
+                <div className="h-7 w-40 bg-[#162032] rounded animate-pulse" />
+              ) : chains.length === 0 ? (
+                <span className="text-xs text-amber-400 font-mono">No chains found. Click "New Chain" to create one.</span>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={selectedChainId}
+                    onChange={(e) => setSelectedChainId(e.target.value)}
+                    className="appearance-none bg-[#0e1626] border border-[#1e293b] hover:border-[#334155] text-slate-200 text-xs font-medium py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer transition-all"
+                  >
+                    {chains.map((cid) => (
+                      <option key={cid} value={cid} className="bg-[#0b1019] text-white">
+                        {cid}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#64748b] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              )}
+
+              {/* Delete Chain Button */}
+              {selectedChainId && (
+                <button
+                  onClick={() => setIsDeleteOpen(true)}
+                  className="p-1.5 rounded-lg border border-rose-900/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-400 hover:text-rose-300 transition-all cursor-pointer"
+                  title={`Destroy internal chain '${selectedChainId}'`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-          )}
 
-          {/* Delete Chain Button (red trash icon) */}
-          {selectedChainId && (
-            <button
-              onClick={() => setIsDeleteOpen(true)}
-              className="p-1.5 rounded-lg border border-rose-900/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-400 hover:text-rose-300 transition-all cursor-pointer"
-              title={`Destroy internal chain '${selectedChainId}'`}
+            {/* Tip Hash Display */}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#64748b]">Tip Hash:</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0e1626] border border-[#1e293b] font-mono text-[11px] text-slate-400">
+                <span className="max-w-[160px] sm:max-w-[260px] truncate" title={tipHash}>
+                  {tipHash ? `${tipHash.slice(0, 16)}...${tipHash.slice(-8)}` : "None"}
+                </span>
+                <button
+                  onClick={handleCopyHash}
+                  className="p-0.5 text-[#64748b] hover:text-white transition-colors cursor-pointer"
+                  title="Copy SHA-256"
+                >
+                  {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI Metrics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* Card 1: Total Blocks */}
+            <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748b] font-medium">
+                  Total Blocks
+                </span>
+                <Layers className="w-4 h-4 text-[#64748b]" />
+              </div>
+              <div className="mt-2 text-xl font-bold text-white tracking-tight">
+                {loadingBlocks ? (
+                  <div className="h-6 w-16 bg-[#162032] rounded animate-pulse" />
+                ) : (
+                  `${chainHeight} Blocks`
+                )}
+              </div>
+              <div className="mt-1 text-[11px] text-[#64748b]">
+                From Genesis to Tip
+              </div>
+            </div>
+
+            {/* Card 2: Status */}
+            <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748b] font-medium">
+                  Status
+                </span>
+                <Lock className="w-4 h-4 text-[#64748b]" />
+              </div>
+              <div className="mt-2 text-xl font-bold tracking-tight">
+                {verificationStatus === "verified" ? (
+                  <span className="text-emerald-400">Verified</span>
+                ) : verificationStatus === "verifying" ? (
+                  <span className="text-slate-300 animate-pulse">Checking...</span>
+                ) : (
+                  <span className="text-rose-400">Tampered</span>
+                )}
+              </div>
+              <div className="mt-1 text-[11px] text-[#64748b]">
+                SHA-256 Linked
+              </div>
+            </div>
+
+            {/* Card 3: Created By */}
+            <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748b] font-medium">
+                  Created By
+                </span>
+                <Cpu className="w-4 h-4 text-[#64748b]" />
+              </div>
+              <div className="mt-2 text-base font-semibold text-white truncate" title={creatorName}>
+                {creatorName}
+              </div>
+              <div className="mt-1 text-[11px] text-[#64748b]">
+                Ledger Owner
+              </div>
+            </div>
+
+            {/* Card 4: Trust Layer / Ethereum Anchor */}
+            <div
+              onClick={() => setActiveView("attestation")}
+              className="p-4 rounded-xl bg-[#0e1622]/80 border border-[#1c2638] relative overflow-hidden group hover:border-[#38bdf8]/40 transition-all cursor-pointer"
+              title="Click to switch to Attestation & Anchors tab"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748b] font-medium">
+                  Trust Layer
+                </span>
+                <Activity className="w-4 h-4 text-[#38bdf8]" />
+              </div>
+              <div className="mt-2 text-base font-semibold text-white">
+                {ethAnchor ? "Ethereum Sepolia" : "Local Ledger"}
+              </div>
+              <div className="mt-1 text-[11px] text-[#38bdf8] flex items-center gap-1">
+                <span>{ethAnchor ? "Public Attestation" : "Internal Checkpoint"}</span>
+                <span className="text-[10px]">→</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal Blockchain Visualizer with ~38px Compact Payload Bar */}
+          <BlockchainVisualizer
+            blocks={blocks}
+            chainId={selectedChainId || "audit_1"}
+            loading={loadingBlocks}
+            onAnchorBlock={handleAnchorBlock}
+          />
+
+          {/* Quick Ethereum Anchor Card */}
+          <EthereumAnchorCard
+            chainId={selectedChainId}
+            chainHeight={blocks.length}
+            tipHash={tipHash}
+            anchor={ethAnchor}
+            onAnchorCreated={(newAnchor) => setEthAnchor(newAnchor)}
+          />
         </div>
+      )}
 
-        {/* Tip Hash Display */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-[#64748b]">Tip Hash:</span>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0e1626] border border-[#1e293b] font-mono text-[11px] text-slate-400">
-            <span className="max-w-[160px] sm:max-w-[260px] truncate" title={tipHash}>
-              {tipHash ? `${tipHash.slice(0, 16)}...${tipHash.slice(-8)}` : "None"}
-            </span>
-            <button
-              onClick={handleCopyHash}
-              className="p-0.5 text-[#64748b] hover:text-white transition-colors cursor-pointer"
-              title="Copy SHA-256"
-            >
-              {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            </button>
-          </div>
+      {/* ── CONDITIONAL VIEW 2: ATTESTATION & ANCHORS ── */}
+      {activeView === "attestation" && (
+        <div className="animate-in fade-in duration-150">
+          <AttestationView
+            chainId={selectedChainId}
+            chainHeight={blocks.length}
+            tipHash={tipHash}
+            walletAddress={walletAddress}
+            onAnchorCreated={(newAnchor) => setEthAnchor(newAnchor)}
+          />
         </div>
-      </div>
+      )}
 
-      {/* ── KPI METRICS GRID ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Card 1: Total Blocks */}
-        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#64748b] font-medium">
-              Total Blocks
-            </span>
-            <Layers className="w-4 h-4 text-[#64748b]" />
-          </div>
-          <div className="mt-2 text-xl font-bold text-white tracking-tight">
-            {loadingBlocks ? (
-              <div className="h-6 w-16 bg-[#162032] rounded animate-pulse" />
-            ) : (
-              `${chainHeight} Blocks`
-            )}
-          </div>
-          <div className="mt-1 text-[11px] text-[#64748b]">
-            From Genesis to Tip
-          </div>
-        </div>
-
-        {/* Card 2: Status */}
-        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#64748b] font-medium">
-              Status
-            </span>
-            <Lock className="w-4 h-4 text-[#64748b]" />
-          </div>
-          <div className="mt-2 text-xl font-bold tracking-tight">
-            {verificationStatus === "verified" ? (
-              <span className="text-emerald-400">Verified</span>
-            ) : verificationStatus === "verifying" ? (
-              <span className="text-slate-300 animate-pulse">Checking...</span>
-            ) : (
-              <span className="text-rose-400">Tampered</span>
-            )}
-          </div>
-          <div className="mt-1 text-[11px] text-[#64748b]">
-            SHA-256 Linked
-          </div>
-        </div>
-
-        {/* Card 3: Created By */}
-        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#64748b] font-medium">
-              Created By
-            </span>
-            <Cpu className="w-4 h-4 text-[#64748b]" />
-          </div>
-          <div className="mt-2 text-base font-semibold text-white truncate" title={creatorName}>
-            {creatorName}
-          </div>
-          <div className="mt-1 text-[11px] text-[#64748b]">
-            Ledger Owner
-          </div>
-        </div>
-
-        {/* Card 4: Trust Layer / Ethereum Anchor */}
-        <div
-          onClick={() => setIsWalletOpen(true)}
-          className="p-4 rounded-xl bg-[#0e1622]/80 border border-[#1c2638] relative overflow-hidden group hover:border-[#f59e0b]/40 transition-all cursor-pointer"
-          title="Click to view connected Web3 wallet and Sepolia contract"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-[#64748b] font-medium">
-              Network
-            </span>
-            <Activity className="w-4 h-4 text-[#64748b]" />
-          </div>
-          <div className="mt-2 text-base font-semibold text-white">
-            {ethAnchor ? "Ethereum L1" : "Local Ledger"}
-          </div>
-          <div className="mt-1 text-[11px] text-[#64748b]">
-            {ethAnchor ? "Public Attestation" : "Internal Checkpoint"}
-          </div>
-        </div>
-      </div>
-
-      {/* ── MODERN HORIZONTAL BLOCKCHAIN VISUALIZER & INLINE INSPECTOR ── */}
-      <BlockchainVisualizer
-        blocks={blocks}
-        chainId={selectedChainId || "audit_1"}
-        loading={loadingBlocks}
-        onAnchorBlock={handleAnchorBlock}
-      />
-
-      {/* ── ETHEREUM L1 TRUST ANCHOR CARD ── */}
-      <EthereumAnchorCard
+      {/* ── VERIFY CHAIN 6-MODE ENGINE MODAL ── */}
+      <VerifyChainModal
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
         chainId={selectedChainId}
-        chainHeight={blocks.length}
-        tipHash={tipHash}
-        anchor={ethAnchor}
-        onAnchorCreated={(newAnchor) => setEthAnchor(newAnchor)}
+        blocksCount={blocks.length}
+        onVerificationComplete={(status) => {
+          setVerificationStatus(status);
+        }}
       />
 
       {/* ── APPEND BLOCK MODAL ── */}

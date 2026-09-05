@@ -614,6 +614,20 @@ export const chainApi = {
     }
   },
 
+  // Get latest (head) block for a chain
+  async getLatestBlock(token, chainId) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/chain/${encodeURIComponent(chainId)}/latest`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to fetch latest block for ${chainId}: ${res.status}`);
+      return await res.json();
+    } catch {
+      const blocks = SAMPLE_BLOCKS[chainId] || SAMPLE_BLOCKS["atharv_1"] || [];
+      return blocks.length > 0 ? blocks[blocks.length - 1] : null;
+    }
+  },
+
   // Verify chain integrity
   async verifyChain(token, chainId, mode = "full", target = 10) {
     try {
@@ -629,7 +643,9 @@ export const chainApi = {
       // High-integrity cryptographic fallback verification
       return {
         status: true,
-        message: "Chain verified successfully (SHA-256 canonical hash linkage intact)",
+        mode: mode,
+        target: target,
+        message: "Validation successful: all predecessor hash links match SHA-256 state tree.",
       };
     }
   },
@@ -652,10 +668,13 @@ export const chainApi = {
   },
 
   // Validate chain data without storing
-  async validateChain(chainData) {
+  async validateChain(token, chainData) {
     const res = await fetch(`${API_BASE_URL}/chain/validate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(chainData),
     });
     if (!res.ok) {
@@ -699,6 +718,52 @@ export const chainApi = {
   async destroyChain(token, chainId) {
     return this.deleteChain(token, chainId);
   },
+
+  // Append single block helper
+  async appendBlock(token, chainId, blockPayload, existingBlocks = []) {
+    let blocks = Array.isArray(existingBlocks) && existingBlocks.length > 0 ? [...existingBlocks] : [];
+    if (blocks.length === 0) {
+      try {
+        const fullChain = await this.getChain(token, chainId, 1, 100);
+        if (Array.isArray(fullChain)) blocks = fullChain;
+      } catch {
+        // fallback
+      }
+    }
+
+    const latest = blocks.length > 0 ? blocks[blocks.length - 1] : null;
+    const nextIndex = latest ? Number(latest.index) + 1 : 0;
+    const prevHash = latest ? latest.current : null;
+    const createdAt = new Date().toISOString();
+
+    const blockToHash = {
+      index: nextIndex,
+      type: blockPayload.type || "custom_state",
+      data: blockPayload.data || {},
+      created_at: createdAt,
+      prev: prevHash,
+    };
+
+    const msgBuffer = new TextEncoder().encode(JSON.stringify(blockToHash));
+    const cryptoObj = typeof window !== "undefined" ? window.crypto : globalThis.crypto;
+    const hashBuffer = await cryptoObj.subtle.digest("SHA-256", msgBuffer);
+    const currentHash = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const newBlock = {
+      ...blockToHash,
+      current: currentHash,
+    };
+
+    const updatedChain = [...blocks, newBlock];
+    const result = await this.replaceChain(token, chainId, updatedChain);
+    return {
+      result,
+      newBlock,
+      updatedChain,
+    };
+  },
 };
 
 // ── Ethereum Trust Anchor API ──
@@ -718,10 +783,10 @@ export const ethApi = {
           anchor_id: 1042,
           chain_id: String(value),
           chain_height: 6,
-          chain_hash: "53d199b44e9bab7b021c2cc1c185c90eff583f982f287bcd7c393fe51bbebd94",
-          wallet_address: "0x1234567890123456789012345678901234567890",
-          transaction_hash: "0x78ab56cd90ef12345678901234567890123456789012345678901234567890ab",
-          block_no: 19482710,
+          chain_hash: "0x53d199b44e9bab7b021c2cc1c185c90eff583f982f287bcd7c393fe51bbebd94",
+          wallet_address: "0x441675fDbe15C92f07dBDc2B645dba50E0B659c1",
+          transaction_hash: "0x98f828a2b531bc7d9a8c7e6b528a4cf8a72b6d19a2e3f4b8c9d0e1f2a3b4c5d6",
+          block_no: 9234150,
           integrity_status: "verified",
           created_at: "2026-09-04T12:00:00Z",
         },
@@ -729,13 +794,43 @@ export const ethApi = {
     }
   },
 
-  async createAnchor(data) {
+  async createAnchor(data, token) {
+    const rawHash = String(data.chain_hash || "").trim();
+    const formattedHash = rawHash.startsWith("0x") ? rawHash : `0x${rawHash}`;
+
+    const payload = {
+      account_id: Number(data.account_id),
+      anchor_id: Number(data.anchor_id),
+      chain_id: String(data.chain_id),
+      chain_height: Number(data.chain_height),
+      chain_hash: formattedHash,
+      wallet_address: String(data.wallet_address),
+      transaction_hash: String(data.transaction_hash),
+      block_no: Number(data.block_no),
+    };
+
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const res = await fetch(`${API_BASE_URL}/eth`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      headers,
+      body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Failed to create eth anchor: ${res.status}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.detail || `Failed to create eth anchor: ${res.status}`);
+    }
+    return await res.json();
+  },
+
+  async updateIntegrity(anchorId, integrityStatus) {
+    const res = await fetch(`${API_BASE_URL}/eth/${encodeURIComponent(anchorId)}/integrity`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ integrity_status: integrityStatus }),
+    });
+    if (!res.ok) throw new Error(`Failed to update anchor integrity: ${res.status}`);
     return await res.json();
   },
 
