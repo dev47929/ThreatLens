@@ -28,6 +28,7 @@ import { chainApi, ethApi, formatBytes, timeAgo } from "@/lib/api";
 import BlockChainVisualizer from "./BlockChainVisualizer";
 import BlockDetailModal from "./BlockDetailModal";
 import BuildChainModal from "./BuildChainModal";
+import TamperSimulatorModal from "./TamperSimulatorModal";
 
 export default function BlockchainTab({
   onInspectBlock,
@@ -46,6 +47,7 @@ export default function BlockchainTab({
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isBuildOpen, setIsBuildOpen] = useState(false);
+  const [isTamperOpen, setIsTamperOpen] = useState(false);
   const [scanningIndex, setScanningIndex] = useState(null);
   const [tamperedBlockIndex, setTamperedBlockIndex] = useState(null);
 
@@ -229,7 +231,7 @@ export default function BlockchainTab({
           </button>
 
           <button
-            onClick={onOpenTamperModal || (() => toast.info("Tamper Simulator opens in Step 8"))}
+            onClick={() => setIsTamperOpen(true)}
             className="px-3.5 py-2 rounded-lg border border-[#f43f5e]/30 bg-[#f43f5e]/10 text-[#fda4af] hover:bg-[#f43f5e]/20 font-mono text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             title="Simulate modifying a block to test cryptographic tamper detection"
           >
@@ -429,6 +431,21 @@ export default function BlockchainTab({
         onChainCreated={(newChainId) => {
           setSelectedChainId(newChainId);
           fetchChains();
+        }}
+      />
+
+      {/* ── INTERACTIVE TAMPER SIMULATOR MODAL ── */}
+      <TamperSimulatorModal
+        isOpen={isTamperOpen}
+        onClose={() => setIsTamperOpen(false)}
+        blocks={blocks}
+        onApplyTamperToRibbon={(corruptedIndex) => {
+          setTamperedBlockIndex(corruptedIndex);
+          setVerificationStatus("tampered");
+        }}
+        onResetRibbon={() => {
+          setTamperedBlockIndex(null);
+          setVerificationStatus("verified");
         }}
       />
     </div>
