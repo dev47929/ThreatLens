@@ -1,20 +1,18 @@
 import React, { useState } from "react";
 import {
-  ArrowLeft,
   Copy,
   Check,
   ShieldCheck,
   ShieldAlert,
   AlertTriangle,
   Zap,
-  Clock,
   ExternalLink,
   Target,
   Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function AttackDetailHeader({ attack, onBack }) {
+export default function AttackDetailHeader({ attack }) {
   const [copied, setCopied] = useState(false);
 
   if (!attack) return null;
@@ -82,25 +80,7 @@ export default function AttackDetailHeader({ attack, onBack }) {
   const StatusIcon = statusMeta.icon;
 
   return (
-    <div className="space-y-4">
-      {/* Top back row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#101722] hover:bg-[#162130] border border-[#223348] text-xs font-semibold text-[#8a99ad] hover:text-white transition-all cursor-pointer shadow-sm group"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          <span>Back to Attack history</span>
-        </button>
-
-        <div className="flex items-center gap-2 text-xs text-[#8a99ad] font-mono">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{identity.createdAt}</span>
-        </div>
-      </div>
-
-      {/* Main Identity Banner Card */}
-      <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+    <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
         {/* Subtle glowing corner accent */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-rose-500/10 via-transparent to-transparent pointer-events-none rounded-full blur-3xl" />
 
@@ -146,6 +126,12 @@ export default function AttackDetailHeader({ attack, onBack }) {
               <span className="font-mono text-[11.5px] text-[#64748b]">{identity.vector}</span>
               <span>·</span>
               <span>By: {identity.authorEmail}</span>
+              {identity.createdAt && (
+                <>
+                  <span>·</span>
+                  <span className="font-mono text-[11.5px] text-[#8a99ad]">{identity.createdAt}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -174,6 +160,5 @@ export default function AttackDetailHeader({ attack, onBack }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }

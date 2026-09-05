@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import GradientWaves from "@/animations/GradientWaves";
 import { normalizeAttackForGraphs } from "@/lib/attackTelemetryData";
 import AttackDetailHeader from "./components/AttackDetailHeader";
-import AttackKpiCards from "./components/AttackKpiCards";
 import AttackTrafficChart from "./components/AttackTrafficChart";
 import RequestRateChart from "./components/RequestRateChart";
 import LatencyProfileChart from "./components/LatencyProfileChart";
@@ -50,12 +49,9 @@ export default function AttackDetailView({ attack, onBack }) {
       {/* Main Container */}
       <div className="relative z-10 p-6 lg:p-10 space-y-6 max-w-[1700px] w-full mx-auto">
         {/* 1. Attack Identity Header Banner */}
-        <AttackDetailHeader attack={normalizedAttack} onBack={onBack} />
+        <AttackDetailHeader attack={normalizedAttack} />
 
-        {/* 2. 7 Aggregate Performance KPI Cards */}
-        <AttackKpiCards attack={normalizedAttack} />
-
-        {/* 3. The 4 Standard Telemetry Visualizations (2x2 Grid) */}
+        {/* 2. The 4 Standard Telemetry Visualizations (2x2 Grid) */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {/* Graph 1: Attack Traffic — Request Progress */}
           <AttackTrafficChart attack={normalizedAttack} />
