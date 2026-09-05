@@ -33,6 +33,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "/chain": {
+          target: apiBaseUrl,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/eth": {
+          target: apiBaseUrl,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };
