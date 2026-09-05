@@ -1,43 +1,48 @@
 import os
-from pathlib import Path
 from dotenv import load_dotenv
+load_dotenv()
 
-# Search and load .env from cli-backend or workspace root
-base_dir = Path(__file__).resolve().parent
-candidates = [
-    base_dir / ".env",
-    base_dir.parent / ".env",
-    base_dir.parent / "ThreatLensGo" / "tui" / ".env",
-]
-for p in candidates:
-    if p.exists():
-        load_dotenv(p, override=True)
 
-class Config :
-    BASE_URL = os.getenv("THREATLENS_REMOTE_URL", "https://api.codesena.me")
+class Config:
+    BASE_URL = "https://api.codesena.me"
     AUTH_BASE_URL = f"{BASE_URL}/tc-auth"
 
-    DB_PATH = os.getenv("THREATLENS_DB_PATH", str(Path(__file__).resolve().parent / "local.db"))
+    DB_PATH = "local.db"
     SQLITE_TIMEOUT = 30.0
 
-    @property
-    def LLM_PROVIDER_BASE_URL(self):
-        return os.getenv("LLM_BASE_URL") or os.getenv("LLM_PROVIDER_BASE_URL") or "https://openrouter.ai/api/v1"
+    GROQ_URL = "https://api.groq.com/openai/v1"
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL")
 
-    @property
-    def LLM_PROVIDER_API_KEY(self):
-        return os.getenv("OPENROUTER_API_KEY") or os.getenv("LLM_PROVIDER_API_KEY") or ""
+    OPEN_ROUTER_URL = "https://openrouter.ai/api/v1"
+    OPEN_ROUTER_API_KEY = os.getenv("OPEN_ROUTER_API_KEY")
+    OPEN_ROUTER_DEFAULT_MODEL = os.getenv("OPEN_ROUTER_DEFAULT_MODEL")
 
-    @property
-    def DEFAULT_MODEL(self):
-        return os.getenv("LLM_MODEL") or os.getenv("DEFAULT_MODEL") or "anthropic/claude-3.5-sonnet"
+    LLM_PROVIDER_BASE_URL = OPEN_ROUTER_URL
+    LLM_PROVIDER_API_KEY = OPEN_ROUTER_API_KEY
+    DEFAULT_MODEL = OPEN_ROUTER_DEFAULT_MODEL
 
     PLAN = {
         "free": 1,
-        "pro": 2, 
-        "proplus": 3, 
+        "pro": 2,
+        "proplus": 3,
         "proplus1": 4,
-        "proplus2": 5
+        "proplus2": 5,
     }
 
+
 config = Config()
+
+
+PROVIDERS = {
+    "groq": {
+        "url": config.GROQ_URL,
+        "api_key": config.GROQ_API_KEY,
+        "default_model": config.GROQ_DEFAULT_MODEL,
+    },
+    "openrouter": {
+        "url": config.OPEN_ROUTER_URL,
+        "api_key": config.OPEN_ROUTER_API_KEY,
+        "default_model": config.OPEN_ROUTER_DEFAULT_MODEL,
+    },
+}

@@ -1,134 +1,117 @@
 import httpx
-from fastapi import HTTPException
 from config import config
-from db import get_jwt
-from schema.llm_chat import ChatMessage
 
 
-def _get_headers(token: str | None = None) -> dict:
-    jwt_val = token or get_jwt()
-    if jwt_val:
-        return {"Authorization": f"Bearer {jwt_val}"}
-    return {}
+def _request(
+    method: str,
+    path: str,
+    *,
+    params: dict | None = None,
+    json: dict | None = None,
+):
+    response = httpx.request(
+        method=method,
+        url=f"{config.BASE_URL}{path}",
+        params=params,
+        json=json,
+    )
+
+    response.raise_for_status()
+
+    return response.json()
 
 
-def get_latest_chat_message(chat_id: int, token: str | None = None) -> ChatMessage | None:
-    try:
-        response = httpx.get(
-            f"{config.BASE_URL}/chats/{chat_id}/history",
-            params={
-                "page": 1,
-                "limit": 1,
-            },
-            headers=_get_headers(token),
-            timeout=15.0,
-        )
-        response.raise_for_status()
-        result = response.json()
-        data = result.get("data") if isinstance(result, dict) else None
-        if data and isinstance(data, list) and len(data) > 0:
-            first = data[0]
-            msg_data = first.get("message") if isinstance(first, dict) and "message" in first else first
-            if isinstance(msg_data, dict):
-                return ChatMessage(**msg_data)
-        return None
-    except Exception:
-        return None
+def get_latest_chat_message(
+    chat_id: int,
+) -> dict | None:
+
+    result = _request(
+        "GET",
+        f"/chats/{chat_id}/history",
+        params={
+            "page": 1,
+            "limit": 1,
+        },
+    )
+
+    data = result.get("data", [])
+
+    return data[0] if data else None
 
 
 def build_chat_history(
-    latest_message: ChatMessage | None,
-    messages: list[ChatMessage],
-) -> list[ChatMessage]:
+    latest_message: dict | None,
+    messages: list[dict],
+) -> list[dict]:
 
     if latest_message is None:
         return messages
 
-    for index, message in enumerate(messages):
-        if message == latest_message:
+    latest = latest_message["message"]
+
+    for index in range(len(messages) - 1, -1, -1):
+        message = messages[index]
+
+        if (
+            message.get("role") == latest.get("role")
+            and message.get("content") == latest.get("content")
+        ):
             return messages[index + 1:]
 
     return messages
 
 
 def insert_chat_history(
-    chat_messages: list[ChatMessage],
-    chat_id: int | str,
-    token: str | None = None,
+    chat_id: int,
+    messages: list[dict],
 ):
-    payload = {
-        "chat_id": int(chat_id),
-        "messages": [
-            message.model_dump(exclude_none=True)
-            for message in chat_messages
-        ],
-    }
-
-    try:
-        response = httpx.post(
-            f"{config.BASE_URL}/chats/history",
-            json=payload,
-            headers=_get_headers(token),
-            timeout=15.0,
-        )
-        response.raise_for_status()
-        return response.json()
-    except httpx.HTTPStatusError as e:
-        detail = "Upstream chat history error"
-        try:
-            err_json = e.response.json()
-            detail = err_json.get("detail") or err_json.get("message") or e.response.text or detail
-        except Exception:
-            detail = e.response.text or detail
-        return {"status": "saved_fallback", "chat_id": int(chat_id), "detail": detail}
-    except Exception as e:
-        return {"status": "saved_fallback", "chat_id": int(chat_id), "detail": str(e)}
+    return _request(
+        "POST",
+        "/chats/history",
+        json={
+            "chat_id": chat_id,
+            "messages": messages,
+        },
+    )
 
 
 def save_chat_history(
     chat_id: int,
-    messages: list[ChatMessage],
-    token: str | None = None,
+    messages: list[dict],
 ):
-    latest_message = get_latest_chat_message(chat_id, token)
+    latest_message = get_latest_chat_message(
+        chat_id=chat_id,
+    )
 
-    chat_history = build_chat_history(
+    new_messages = build_chat_history(
         latest_message=latest_message,
         messages=messages,
     )
 
+    if not new_messages:
+        return {
+            "chat_id": chat_id,
+            "saved": 0,
+        }
+
     return insert_chat_history(
-        chat_messages=chat_history,
         chat_id=chat_id,
-        token=token,
+        messages=new_messages,
     )
 
 
 def get_history(
     chat_id: int,
-    page: int,
-    limit: int,
-    token: str | None = None,
+    page: int = 1,
+    limit: int = 10,
+    format: str = "default",
 ):
-    try:
-        response = httpx.get(
-            f"{config.BASE_URL}/chats/{chat_id}/history",
-            params={
-                "page": page,
-                "limit": limit,
-            },
-            headers=_get_headers(token),
-            timeout=15.0,
-        )
-        response.raise_for_status()
-        return response.json()
-    except httpx.HTTPStatusError as e:
-        detail = "Upstream chat history error"
-        try:
-            err_json = e.response.json()
-            detail = err_json.get("detail") or err_json.get("message") or e.response.text or detail
-        except Exception:
-            detail = e.response.text or detail
-        raise HTTPException(status_code=e.response.status_code, detail=detail)
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=503, detail=f"Cannot reach remote chat service: {str(e)}")
+    return _request(
+        "GET",
+        f"/chats/{chat_id}/history",
+        params={
+            "page": page,
+            "limit": limit,
+            "format": format,
+        },
+    )

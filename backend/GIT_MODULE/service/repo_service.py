@@ -98,15 +98,26 @@ def upsert_repository(
 
 def get_repositories(
     account_id: int,
+    repo_id: int | None = None,
+    page: int = 1,
+    limit: int = 10,
 ) -> list[dict]:
 
     db = session_factory()
 
+    query = db.query(Repo)
+
+    if repo_id:
+        query = query.filter(Repo.id == repo_id)
+    else:
+        query = query.filter(Repo.account_id == account_id)
+
+    offset = (page - 1) * limit
+
     repositories = (
-        db.query(Repo)
-        .filter(
-            Repo.account_id == account_id
-        )
+        query
+        .offset(offset)
+        .limit(limit)
         .all()
     )
 

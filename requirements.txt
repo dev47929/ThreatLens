@@ -1,0 +1,6 @@
+# ThreatLens Backend Requirements
+-r backend/requirements.txt
+
+# Security Test Suite & CLI
+typer>=0.12.0
+rich>=13.0.0

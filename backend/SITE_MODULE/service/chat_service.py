@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from utils.get_helper import to_dict, to_list_dict
 
 from SITE_MODULE.db.models import ChatHistory, Chat
@@ -23,6 +24,10 @@ def save_chat_history(
         db.add_all(history)
         db.commit()
 
+        return {
+            "chat_id": chat_id,
+            "saved": len(history),
+        }
 
     except Exception:
         db.rollback()
@@ -42,18 +47,20 @@ def get_chat_history(
     try:
         offset = (page - 1) * limit
 
-        return to_list_dict(
+        history = (
             db.query(ChatHistory)
             .filter(
                 ChatHistory.chat_id == chat_id,
             )
             .order_by(
-                ChatHistory.created_at.desc()
+                ChatHistory.id.desc()
             )
             .offset(offset)
             .limit(limit)
             .all()
         )
+
+        return to_list_dict(history)
 
     finally:
         db.close()
@@ -141,7 +148,7 @@ def get_chats(
                 Chat.account_id == account_id,
             )
             .order_by(
-                Chat.updated_at.desc()
+                Chat.id.desc()
             )
             .all()
         )

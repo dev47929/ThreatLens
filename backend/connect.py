@@ -1,6 +1,8 @@
 # from tc_auth.auth import Auth
 from sqlalchemy import create_engine
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from tc_auth import Auth 
 from fastapi import FastAPI
 from config import config
@@ -23,6 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+blockchain_dir = Path("BLOCKCHAIN_MODULE")
+chains_dir = blockchain_dir / "chains"
+chains_dir.mkdir(parents=True, exist_ok=True)
+
+app.mount(
+    "/chains",
+    StaticFiles(directory=chains_dir),
+    name="chains",
+)
 
 auth.jwt.config(
     secret_key=config.JWT_SECRET_KEY,

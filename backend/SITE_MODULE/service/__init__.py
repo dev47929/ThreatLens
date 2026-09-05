@@ -6,3 +6,7 @@ from .chat_service import (
 from .usage_service import (
     get_usage
 )
+
+from .attack_service import(
+    get_attack
+)

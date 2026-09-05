@@ -1,5 +1,7 @@
 from BLOCKCHAIN_MODULE.service.chain_service import InternalChain
 from BLOCKCHAIN_MODULE.imports import *
+from BLOCKCHAIN_MODULE.service.config import config
+from BLOCKCHAIN_MODULE.service.builder_service import build_chain
 from connect import auth , init , destroy
 
 user = {
@@ -33,11 +35,6 @@ user = {
   }
 }
 
-# chain = InternalChain(chain_name="commit", user=user)
-# commits = get_commit_analysis(repo_id=1,limit=500)
-# repo = get_repositories(account_id=1)
-# chain.create_block(type="repo", data=repo)
-# chain.create_block(type="commit_analyis",data=commits)
-# chain.commit()
-# print(chain.verify_chain(mode="full")) 
 
+chain = build_chain(config=config, user=user)
+print(chain.load_chain())

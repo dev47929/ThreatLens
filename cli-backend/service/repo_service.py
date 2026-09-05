@@ -5,8 +5,10 @@ from analysis import (
     RepositoryAnalyzer,
 )
 
+from db import get_jwt
 from repo import Repository
 from config import config
+jwt = get_jwt()
 
 
 def build_repo(repo: Repository, jwt: str):

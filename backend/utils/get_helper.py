@@ -4,6 +4,9 @@ from uuid import UUID
 
 
 def to_dict(model, exclude=None):
+    if model is None:
+        return {}
+
     exclude = set(exclude or [])
 
     result = {}
@@ -25,5 +28,13 @@ def to_dict(model, exclude=None):
 
     return result
 
+
 def to_list_dict(models, exclude=None):
-    return [to_dict(model, exclude=exclude) for model in models]
+    if models is None:
+        return []
+
+    return [
+        to_dict(model, exclude=exclude)
+        for model in models
+        if model is not None
+    ]

@@ -1,100 +1,98 @@
-# Chat API Routes
+# Global Backend Chat API Usage
 
-Base URL:
+This API is the **global backend chat service** hosted at:
 
-- http://localhost:8000
+```text
+https://api.codesena.me
+```
 
-These routes are defined in `backend/SITE_MODULE/api/chat_route.py` and are mounted under the `/chats` prefix.
+It is separate from the CLI/local chat API. These routes manage chat sessions and persisted chat history for authenticated accounts.
+
+## Authentication
+
+Chat creation, chat listing, and chat deletion use the current authenticated account.
+
+The authentication dependency resolves the account and the backend uses:
+
+```text
+account["account"]["id"]
+```
+
+The history routes shown here do not explicitly declare the authentication dependency in the router code.
 
 ---
 
-## 1) Save chat history
+## 1. Save Chat History
 
-### POST /chats/history
+### POST `/chats/history`
 
-Stores a list of chat messages associated with a chat ID.
+Saves one or more messages to an existing chat.
 
-#### Parameters
-
-No query parameters.
-
-#### Request body
+### Request
 
 ```json
 {
-  "chat_id": 12,
+  "chat_id": 1,
   "messages": [
     {
       "role": "user",
-      "content": "Explain the repo structure"
+      "content": "What is Redis?"
     },
     {
       "role": "assistant",
-      "content": "This project contains a backend, site module, and frontend."
+      "content": "Redis is an in-memory data store."
     }
   ]
 }
 ```
 
-Fields:
+Each message is converted using:
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| chat_id | integer | Yes | Target chat ID |
-| messages | array | Yes | Chat message list, each with `role` and `content` |
+```python
+message.model_dump(exclude_none=True)
+```
 
-Each message object may include optional fields such as `tool_calls` and `tool_call_id`.
+The message data can contain:
 
-#### Response
+```text
+role
+content
+tool_calls
+tool_call_id
+```
+
+### Response
 
 ```json
 {
-  "chat_id": 12,
+  "chat_id": 1,
   "saved": 2
 }
 ```
 
-#### Sample fetch
-
-```js
-fetch("http://localhost:8000/chats/history", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    chat_id: 12,
-    messages: [
-      { role: "user", content: "Explain the repo structure" },
-      { role: "assistant", content: "This project contains a backend, site module, and frontend." }
-    ]
-  })
-})
-  .then((res) => res.json())
-  .then((data) => console.log(data));
-```
-
 ---
 
-## 2) Get chat history
+## 2. Get Chat History
 
-### GET /chats/{chat_id}/history
+### GET `/chats/{chat_id}/history`
 
-Fetches paginated chat history for a given chat.
+Returns paginated chat history.
 
-#### Parameters
+### Query Parameters
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| chat_id | integer | Yes | Chat session ID |
-| page | integer | No | Page number, default `1`, minimum `1` |
-| limit | integer | No | Page size, default `10`, range `1-100` |
+| Parameter | Type | Default | Constraints |
+|---|---|---:|---|
+| `page` | integer | `1` | `>= 1` |
+| `limit` | integer | `10` | `1-100` |
+| `format` | string | `default` | `default`, `message`, `table` |
 
-#### Request body
+### Default Format
 
-No request body.
+```http
+GET https://api.codesena.me/chats/1/history?page=1&limit=10
+```
 
-#### Response
+Response:
 
 ```json
 {
@@ -102,153 +100,138 @@ No request body.
   "limit": 10,
   "data": [
     {
-      "id": 1,
-      "chat_id": 12,
+      "id": 36,
       "message": {
-        "role": "user",
-        "content": "Explain the repo structure"
+        "role": "assistant",
+        "content": "Redis is an in-memory data store."
       },
-      "created_at": "2026-08-30T12:00:00Z"
+      "chat_id": 1,
+      "created_at": "2026-09-02T21:19:13.462709+05:30"
     }
   ]
 }
 ```
 
-#### Sample fetch
+### Message Format
 
-```js
-fetch("http://localhost:8000/chats/12/history?page=1&limit=10")
-  .then((res) => res.json())
-  .then((data) => console.log(data));
+Use:
+
+```http
+GET https://api.codesena.me/chats/1/history?page=1&limit=10&format=message
 ```
 
----
-
-## 3) Create a chat
-
-### POST /chats
-
-Creates a new chat for the authenticated account.
-
-#### Parameters
-
-No query parameters.
-
-#### Request body
-
-```json
-{
-  "title": "Repository Review",
-  "model": "gpt-4o-mini"
-}
-```
-
-Fields:
-
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| title | string | No | Chat title |
-| model | string | No | Model identifier |
-
-#### Response
-
-Example response from the database-backed chat creation flow:
-
-```json
-{
-  "id": 12,
-  "account_id": 3,
-  "title": "Repository Review",
-  "model": "gpt-4o-mini",
-  "created_at": "2026-08-30T12:00:00Z",
-  "updated_at": "2026-08-30T12:00:00Z"
-}
-```
-
-#### Sample fetch
-
-```js
-fetch("http://localhost:8000/chats", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer <token>"
-  },
-  body: JSON.stringify({
-    title: "Repository Review",
-    model: "gpt-4o-mini"
-  })
-})
-  .then((res) => res.json())
-  .then((data) => console.log(data));
-```
-
----
-
-## 4) Get all chats
-
-### GET /chats
-
-Returns all chats for the authenticated account.
-
-#### Parameters
-
-No query parameters.
-
-#### Request body
-
-No request body.
-
-#### Response
+This returns **only the list of message dictionaries**:
 
 ```json
 [
   {
-    "id": 12,
-    "account_id": 3,
-    "title": "Repository Review",
-    "model": "gpt-4o-mini"
+    "role": "user",
+    "content": "What is Redis?"
   },
   {
-    "id": 13,
-    "account_id": 3,
-    "title": "Security Review",
-    "model": "claude-3-5-sonnet"
+    "role": "assistant",
+    "content": "Redis is an in-memory data store."
   }
 ]
 ```
 
-#### Sample fetch
+Tool-related fields are preserved when present:
 
-```js
-fetch("http://localhost:8000/chats", {
-  headers: {
-    "Authorization": "Bearer <token>"
+```json
+[
+  {
+    "role": "assistant",
+    "content": null,
+    "tool_calls": [
+      {
+        "id": "call_123",
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "arguments": "{\"city\":\"Bhopal\"}"
+        }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "content": "{\"temperature\":28}",
+    "tool_call_id": "call_123"
   }
-})
-  .then((res) => res.json())
-  .then((data) => console.log(data));
+]
 ```
+
+### Table Format
+
+The API accepts:
+
+```http
+GET /chats/1/history?format=table
+```
+
+The current route contains no table transformation:
+
+```python
+if format == "table":
+    history
+```
+
+Therefore, no separate table response structure is currently defined by this route.
 
 ---
 
-## 5) Delete a chat
+## 3. Create Chat
 
-### DELETE /chats/{chat_id}
+### POST `/chats`
 
-Deletes a chat and its history for the authenticated account.
+Creates a chat for the authenticated account.
 
-#### Parameters
+### Request
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| chat_id | integer | Yes | Chat ID to delete |
+```json
+{
+  "title": "Redis Discussion",
+  "model": "openai/gpt-oss-20b"
+}
+```
 
-#### Request body
+### Response
 
-No request body.
+Returns the chat object created by the backend.
 
-#### Response
+The chat is associated with the authenticated account automatically.
+
+---
+
+## 4. List Chats
+
+### GET `/chats`
+
+Returns chats belonging to the authenticated account.
+
+Example:
+
+```http
+GET https://api.codesena.me/chats
+```
+
+No request body or query parameters are required.
+
+---
+
+## 5. Delete Chat
+
+### DELETE `/chats/{chat_id}`
+
+Deletes a chat belonging to the authenticated account.
+
+Example:
+
+```http
+DELETE https://api.codesena.me/chats/1
+```
+
+Response:
 
 ```json
 {
@@ -256,22 +239,37 @@ No request body.
 }
 ```
 
-#### Sample fetch
-
-```js
-fetch("http://localhost:8000/chats/12", {
-  method: "DELETE",
-  headers: {
-    "Authorization": "Bearer <token>"
-  }
-})
-  .then((res) => res.json())
-  .then((data) => console.log(data));
-```
+The exact result depends on the deletion performed by the service.
 
 ---
 
-## Notes
+## Endpoint Summary
 
-- These routes require the authenticated user context via the backend auth dependency.
-- `Authorization: Bearer <token>` is expected on routes that call `auth.deps.get_current`.
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/chats/history` | Save chat messages |
+| `GET` | `/chats/{chat_id}/history` | Get paginated history |
+| `POST` | `/chats` | Create a chat |
+| `GET` | `/chats` | List account chats |
+| `DELETE` | `/chats/{chat_id}` | Delete a chat |
+
+## Message Structure
+
+The history data uses message dictionaries with the following possible fields:
+
+```python
+{
+    "role": str,
+    "content": Any,
+    "tool_calls": list[dict] | None,
+    "tool_call_id": str | None,
+}
+```
+
+Optional fields are omitted when saving because the backend uses:
+
+```python
+model_dump(exclude_none=True)
+```
+
+This API is the **global backend API** at `api.codesena.me`, not the local/CLI gateway API.

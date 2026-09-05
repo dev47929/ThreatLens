@@ -1,5 +1,6 @@
 from connect import auth
 from fastapi import APIRouter, Depends, Query
+from typing import Literal
 from SITE_MODULE.service.chat_service import (
     save_chat_history,
     get_chat_history,
@@ -50,12 +51,19 @@ def get_history(
     chat_id: int,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
+    format: Literal["default", "message", "table"] = Query("default"),
 ):
     history = get_chat_history(
         chat_id=chat_id,
         page=page,
         limit=limit,
     )
+
+    if format == "message":
+        return [item["message"] for item in history]
+
+    if format == "table":
+        history
 
     return {
         "page": page,

@@ -41,7 +41,6 @@ def upsert_repository_api(
     request: RepositoryUpsertRequest,
     account=Depends(auth.deps.get_current),
 ):
-    print(account)
     return upsert_repository(
         account_id=account["account"]["id"],
         data=request.data,
@@ -53,10 +52,16 @@ def upsert_repository_api(
     response_model=list[RepositoryResponse],
 )
 def get_repositories_api(
+    repo_id: int | None = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
     account=Depends(auth.deps.get_current),
 ):
     return get_repositories(
         account_id=account["account"]["id"],
+        repo_id=repo_id,
+        page=page,
+        limit=limit,
     )
 
 
