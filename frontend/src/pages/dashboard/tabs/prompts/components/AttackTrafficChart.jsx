@@ -86,45 +86,13 @@ export default function AttackTrafficChart({ attack }) {
       : "0.0";
 
   return (
-    <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4">
+    <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4">
       {/* Chart Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 pb-2 border-b border-[#1b2838]">
-        <div>
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#38bdf8]" />
-            <h2 className="text-sm font-bold text-white tracking-wide">
-              Attack Traffic — Request Progress
-            </h2>
-          </div>
-          <p className="text-[11.5px] text-[#8a99ad] mt-0.5">
-            Compares cumulative attempted and successful requests against planned volume
-          </p>
-        </div>
-
-        {/* Legend & Annotation Callout matching 01_attack_traffic.png */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 text-xs font-mono">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#0284c7]" />
-              <span className="text-white text-[11.5px]">Attempted</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />
-              <span className="text-white text-[11.5px]">Successful</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 border-b-2 border-dashed border-[#38bdf8]" />
-              <span className="text-[#8a99ad] text-[11.5px]">Planned · {plannedRequests.toLocaleString()}</span>
-            </div>
-          </div>
-
-          {/* Callout badge */}
-          <div className="px-2.5 py-1 rounded-lg bg-[#0c131d] border border-[#23354b] text-[11px] font-mono text-[#d8e2e8] shadow-sm">
-            Final <span className="text-white font-bold">{final.successful.toLocaleString()}</span> /{" "}
-            <span>{plannedRequests.toLocaleString()}</span> successful (
-            <span className="text-emerald-400 font-bold">{finalCompletion}%</span>)
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        <Activity className="w-4 h-4 text-[#38bdf8]" />
+        <h2 className="text-sm font-bold text-white tracking-wide">
+          Attack Traffic — Request Progress
+        </h2>
       </div>
 
       {/* Chart Canvas */}
@@ -196,6 +164,33 @@ export default function AttackTrafficChart({ attack }) {
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Stats below the graph */}
+      <div className="flex flex-wrap items-center gap-10 pt-3">
+        <div>
+          <div className="text-xs text-[#8a99ad]">Successful requests</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {final.successful.toLocaleString()}
+          </div>
+          <div className="text-xs text-white mt-0.5">Requests</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-[#8a99ad]">Success rate</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {finalCompletion}%
+          </div>
+          <div className="text-xs text-white mt-0.5">Completed</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-[#8a99ad]">Planned requests</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {plannedRequests.toLocaleString()}
+          </div>
+          <div className="text-xs text-white mt-0.5">Requests</div>
+        </div>
       </div>
     </div>
   );

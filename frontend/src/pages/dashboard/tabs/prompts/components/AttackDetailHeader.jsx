@@ -21,7 +21,7 @@ export default function AttackDetailHeader({ attack }) {
   };
 
   return (
-    <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+    <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
         {/* Subtle glowing corner accent */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-rose-500/10 via-transparent to-transparent pointer-events-none rounded-full blur-3xl" />
 

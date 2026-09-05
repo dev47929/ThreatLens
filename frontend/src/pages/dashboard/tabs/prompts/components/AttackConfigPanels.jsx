@@ -3,12 +3,10 @@ import {
   Server,
   Settings2,
   Shield,
-  FileCode2,
   Copy,
   Check,
   Download,
   AlertOctagon,
-  Terminal,
   Layers,
   ChevronDown,
   ChevronUp,
@@ -18,8 +16,7 @@ import { toast } from "sonner";
 export default function AttackConfigPanels({ attack }) {
   const [copiedPayload, setCopiedPayload] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
-  const [isRawJsonExpanded, setIsRawJsonExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState("specs"); // "specs" | "defense" | "raw"
+  const [activeTab, setActiveTab] = useState("specs"); // "specs" | "defense"
 
   if (!attack) return null;
 
@@ -62,8 +59,8 @@ export default function AttackConfigPanels({ attack }) {
   return (
     <div className="space-y-4">
       {/* Sub-navigation tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-[#1b2838]">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#0c121a] border border-[#1e2d42]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black border border-[#1e2d42]">
           <button
             onClick={() => setActiveTab("specs")}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
@@ -87,24 +84,12 @@ export default function AttackConfigPanels({ attack }) {
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
             <span>Defense Trace & Status Codes</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab("raw")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "raw"
-                ? "bg-[#1e2d42] text-white shadow-sm"
-                : "text-[#8a99ad] hover:text-white"
-            }`}
-          >
-            <FileCode2 className="w-3.5 h-3.5 text-[#a78bfa]" />
-            <span>Raw JSON Telemetry</span>
-          </button>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyJson}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#101724] hover:bg-[#162130] border border-[#23354b] text-xs font-mono text-[#8a99ad] hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black hover:bg-[#162130] border border-[#23354b] text-xs font-mono text-[#8a99ad] hover:text-white transition-colors cursor-pointer"
             title="Copy entire attack JSON"
           >
             {copiedJson ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -113,7 +98,7 @@ export default function AttackConfigPanels({ attack }) {
 
           <button
             onClick={handleDownloadJson}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#101724] hover:bg-[#162130] border border-[#23354b] text-xs font-mono text-[#8a99ad] hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black hover:bg-[#162130] border border-[#23354b] text-xs font-mono text-[#8a99ad] hover:text-white transition-colors cursor-pointer"
             title="Download JSON audit report"
           >
             <Download className="w-3.5 h-3.5 text-[#38bdf8]" />
@@ -124,10 +109,10 @@ export default function AttackConfigPanels({ attack }) {
 
       {/* TAB 1: Target & Attack Config */}
       {activeTab === "specs" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="space-y-4 w-full">
           {/* Target Specification */}
-          <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2838]">
+          <div className="w-full bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Server className="w-4 h-4 text-[#38bdf8]" />
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -139,21 +124,26 @@ export default function AttackConfigPanels({ attack }) {
               </span>
             </div>
 
-            <div className="space-y-2 text-xs font-mono">
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#090e16] border border-[#1b2738]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs font-mono">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-[#1b2738]">
                 <span className="text-[#8a99ad]">Base URL:</span>
-                <span className="text-white font-medium">{target.baseUrl}</span>
+                <span className="text-white font-medium truncate ml-2">{target.baseUrl}</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#090e16] border border-[#1b2738]">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-[#1b2738]">
                 <span className="text-[#8a99ad]">Target Endpoint:</span>
-                <span className="text-[#38bdf8] font-bold">{target.endpoint}</span>
+                <span className="text-[#38bdf8] font-bold truncate ml-2">{target.endpoint}</span>
               </div>
 
-              {target.auth && (
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#090e16] border border-[#1b2738]">
+              {target.auth ? (
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-[#1b2738]">
                   <span className="text-[#8a99ad]">Auth Header:</span>
-                  <span className="text-emerald-400 font-medium">{target.auth}</span>
+                  <span className="text-emerald-400 font-medium truncate ml-2">{target.auth}</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-[#1b2738]">
+                  <span className="text-[#8a99ad]">Auth Status:</span>
+                  <span className="text-slate-400 font-medium">None / Public</span>
                 </div>
               )}
             </div>
@@ -173,15 +163,15 @@ export default function AttackConfigPanels({ attack }) {
                 </button>
               </div>
 
-              <pre className="p-3.5 rounded-xl bg-[#080d14] border border-rose-900/30 text-rose-300 text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">
+              <pre className="p-3.5 rounded-xl bg-black border border-rose-900/30 text-rose-300 text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">
                 {target.payload || "No explicit body payload recorded."}
               </pre>
             </div>
           </div>
 
-          {/* Attack Parameters & Configuration */}
-          <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2838]">
+          {/* Attack Parameters & Configuration (Expanded below Target Endpoint to Max Width) */}
+          <div className="w-full bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-[#38bdf8]" />
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -193,35 +183,141 @@ export default function AttackConfigPanels({ attack }) {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-[#090e16] border border-[#1b2738]">
-                <div className="text-[10px] text-[#8a99ad] uppercase">Planned Volume</div>
-                <div className="text-sm font-bold text-white mt-0.5">{config.plannedRequests.toLocaleString()} requests</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Radial Card 1: Total Requests (Full Ring Radial Chart) */}
+              <div className="bg-black border border-[#1e2d42] rounded-xl p-4 flex flex-col justify-between items-center text-center">
+                <div className="w-full text-left">
+                  <div className="text-xs font-bold text-white tracking-tight">Total Requests</div>
+                  <div className="text-[11px] text-[#8a99ad] mt-0.5">Planned volume</div>
+                </div>
+
+                <div className="relative w-32 h-32 my-3 flex items-center justify-center">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#162232"
+                      strokeWidth="10"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#3b82f6"
+                      strokeWidth="10"
+                      strokeDasharray="238.7"
+                      strokeDashoffset={Math.max(25, 238.7 - (Math.min(config.plannedRequests, 50) / 50) * 190)}
+                      strokeLinecap="round"
+                      fill="transparent"
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+                    <span className="text-2xl font-bold text-white tracking-tight">
+                      {config.plannedRequests.toLocaleString()}
+                    </span>
+                    <span className="text-[11px] text-[#8a99ad]">Requests</span>
+                  </div>
+                </div>
+
+                <div className="w-full text-center space-y-0.5 pt-1">
+                  <div className="text-xs font-semibold text-white">
+                    {config.concurrency} parallel streams
+                  </div>
+                  <div className="text-[11px] text-[#8a99ad]">Simultaneous workers</div>
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#090e16] border border-[#1b2738]">
-                <div className="text-[10px] text-[#8a99ad] uppercase">Concurrency Workers</div>
-                <div className="text-sm font-bold text-[#38bdf8] mt-0.5">{config.concurrency} parallel streams</div>
+              {/* Radial Card 2: Attack Duration (Radial Sweep Shape) */}
+              <div className="bg-black border border-[#1e2d42] rounded-xl p-4 flex flex-col justify-between items-center text-center">
+                <div className="w-full text-left">
+                  <div className="text-xs font-bold text-white tracking-tight">Attack Duration</div>
+                  <div className="text-[11px] text-[#8a99ad] mt-0.5">Execution time</div>
+                </div>
+
+                <div className="relative w-32 h-32 my-3 flex items-center justify-center">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#162232"
+                      strokeWidth="11"
+                      strokeDasharray="238.7"
+                      strokeDashoffset="60"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#2563eb"
+                      strokeWidth="11"
+                      strokeDasharray="238.7"
+                      strokeDashoffset="160"
+                      strokeLinecap="round"
+                      fill="transparent"
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+                    <span className="text-2xl font-bold text-white tracking-tight">
+                      {config.duration}s
+                    </span>
+                    <span className="text-[11px] text-[#8a99ad]">Duration</span>
+                  </div>
+                </div>
+
+                <div className="w-full text-center space-y-0.5 pt-1">
+                  <div className="text-xs font-semibold text-white">
+                    {config.delay}s delay
+                  </div>
+                  <div className="text-[11px] text-[#8a99ad]">Between requests</div>
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#090e16] border border-[#1b2738]">
-                <div className="text-[10px] text-[#8a99ad] uppercase">Inter-Request Delay</div>
-                <div className="text-sm font-bold text-white mt-0.5">{config.delay}s</div>
-              </div>
+              {/* Radial Card 3: Request Timeout (Semi-circle Stacked Arc) */}
+              <div className="bg-black border border-[#1e2d42] rounded-xl p-4 flex flex-col justify-between items-center text-center">
+                <div className="w-full text-left">
+                  <div className="text-xs font-bold text-white tracking-tight">Request Timeout</div>
+                  <div className="text-[11px] text-[#8a99ad] mt-0.5">Wait limit</div>
+                </div>
 
-              <div className="p-3 rounded-xl bg-[#090e16] border border-[#1b2738]">
-                <div className="text-[10px] text-[#8a99ad] uppercase">Request Timeout</div>
-                <div className="text-sm font-bold text-white mt-0.5">{config.timeout}s</div>
-              </div>
+                <div className="relative w-36 h-32 my-3 flex flex-col items-center justify-center">
+                  <svg className="w-36 h-20 mb-2" viewBox="0 0 140 75">
+                    <path
+                      d="M 15 70 A 55 55 0 0 1 125 70"
+                      stroke="#162232"
+                      strokeWidth="12"
+                      fill="transparent"
+                    />
+                    <path
+                      d="M 15 70 A 55 55 0 0 1 125 70"
+                      stroke="#60a5fa"
+                      strokeWidth="12"
+                      strokeDasharray="172.8"
+                      strokeDashoffset={Math.max(25, 172.8 - (Math.min(config.timeout, 10) / 10) * 140)}
+                      strokeLinecap="round"
+                      fill="transparent"
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                  <div className="absolute bottom-2 flex flex-col items-center justify-center select-none">
+                    <span className="text-2xl font-bold text-white tracking-tight">
+                      {config.timeout}s
+                    </span>
+                    <span className="text-[11px] text-[#8a99ad]">Max wait</span>
+                  </div>
+                </div>
 
-              <div className="p-3 rounded-xl bg-[#090e16] border border-[#1b2738]">
-                <div className="text-[10px] text-[#8a99ad] uppercase">Max Retries</div>
-                <div className="text-sm font-bold text-white mt-0.5">{config.retries} attempts</div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#090e16] border border-[#1b2738]">
-                <div className="text-[10px] text-[#8a99ad] uppercase">Configured Duration</div>
-                <div className="text-sm font-bold text-white mt-0.5">{config.duration}s</div>
+                <div className="w-full text-center space-y-0.5 pt-1">
+                  <div className="text-xs font-semibold text-white">
+                    {config.retries} retries allowed
+                  </div>
+                  <div className="text-[11px] text-[#8a99ad]">Retry limit</div>
+                </div>
               </div>
             </div>
           </div>
@@ -232,8 +328,8 @@ export default function AttackConfigPanels({ attack }) {
       {activeTab === "defense" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Status Codes Distribution */}
-          <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2838]">
+          <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#38bdf8]" />
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -262,7 +358,7 @@ export default function AttackConfigPanels({ attack }) {
                 const barColor = is2xx ? "#10b981" : is4xx ? "#f59e0b" : "#f43f5e";
 
                 return (
-                  <div key={code} className="space-y-1 p-2.5 rounded-xl bg-[#090e16] border border-[#1b2738]">
+                  <div key={code} className="space-y-1 p-2.5 rounded-xl bg-black border border-[#1b2738]">
                     <div className="flex items-center justify-between text-xs font-mono">
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded font-bold border text-[11px] ${badgeColor}`}>
@@ -291,8 +387,8 @@ export default function AttackConfigPanels({ attack }) {
           </div>
 
           {/* Defense Interception & SIEM Audit Log */}
-          <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2838]">
+          <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">
@@ -304,7 +400,7 @@ export default function AttackConfigPanels({ attack }) {
               </span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#090e16] border border-[#1b2738] space-y-2">
+            <div className="p-3.5 rounded-xl bg-black border border-[#1b2738] space-y-2">
               <div className="text-[11px] font-mono text-[#8a99ad] uppercase font-semibold">
                 Guardrail Interception Summary
               </div>
@@ -330,7 +426,7 @@ export default function AttackConfigPanels({ attack }) {
                 <div className="text-[11px] font-mono text-[#8a99ad] uppercase">Categorized Interceptions</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {errors.map(([errKey, count]) => (
-                    <div key={errKey} className="p-2.5 rounded-xl bg-[#090e16] border border-[#1b2738] flex items-center justify-between text-xs font-mono">
+                    <div key={errKey} className="p-2.5 rounded-xl bg-black border border-[#1b2738] flex items-center justify-between text-xs font-mono">
                       <span className="text-rose-300 truncate">{errKey}</span>
                       <span className="font-bold text-white">{count}</span>
                     </div>
@@ -339,27 +435,6 @@ export default function AttackConfigPanels({ attack }) {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* TAB 3: Raw JSON Inspector */}
-      {activeTab === "raw" && (
-        <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-xl space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-[#1b2838]">
-            <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-[#a78bfa]" />
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                Full Raw JSON Telemetry Payload (GET /attack)
-              </h3>
-            </div>
-            <span className="text-[11px] font-mono text-[#8a99ad]">
-              Schema: ThreatLens Telemetry v1.0
-            </span>
-          </div>
-
-          <pre className="p-4 rounded-xl bg-[#080d14] border border-[#1b2636] text-xs font-mono text-[#38bdf8] leading-relaxed max-h-96 overflow-y-auto overflow-x-auto whitespace-pre">
-            {JSON.stringify(raw || attack, null, 2)}
-          </pre>
         </div>
       )}
     </div>

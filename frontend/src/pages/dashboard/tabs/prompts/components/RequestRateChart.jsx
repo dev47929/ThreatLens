@@ -70,39 +70,13 @@ export default function RequestRateChart({ attack }) {
   };
 
   return (
-    <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4">
+    <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-5 shadow-2xl flex flex-col space-y-4">
       {/* Chart Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 pb-2 border-b border-[#1b2838]">
-        <div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#38bdf8]" />
-            <h2 className="text-sm font-bold text-white tracking-wide">
-              Request Rate — Attack Intensity
-            </h2>
-          </div>
-          <p className="text-[11.5px] text-[#8a99ad] mt-0.5">
-            Monitors rate of request flooding generation over time (Requests / Second)
-          </p>
-        </div>
-
-        {/* Badges: Config parameters and Peak Marker matching 02_request_rate.png */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="px-2.5 py-1 rounded-lg bg-[#0c131d] border border-[#23354b] text-[11px] font-mono text-[#8a99ad] shadow-sm">
-            <span className="text-white font-bold">{identity.type}</span> · concurrency{" "}
-            <span className="text-[#38bdf8] font-bold">{config.concurrency}</span> · delay{" "}
-            <span className="text-white font-bold">{config.delay}s</span> · timeout{" "}
-            <span className="text-white font-bold">{config.timeout}s</span> · retries{" "}
-            <span className="text-white font-bold">{config.retries}</span>
-          </div>
-
-          <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/30 text-[11px] font-mono text-amber-300 flex items-center gap-1.5 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span>
-              Peak <strong className="text-white">{Number(peakPoint?.rps || 0).toFixed(1)} RPS</strong> @{" "}
-              {Number(peakPoint?.time || 0).toFixed(2)}s
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-[#38bdf8]" />
+        <h2 className="text-sm font-bold text-white tracking-wide">
+          Request Rate — Attack Intensity
+        </h2>
       </div>
 
       {/* Chart Canvas */}
@@ -169,6 +143,41 @@ export default function RequestRateChart({ attack }) {
             />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Stats below the graph */}
+      <div className="flex flex-wrap items-center gap-10 pt-3">
+        <div>
+          <div className="text-xs text-[#8a99ad]">Concurrency</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {config.concurrency}
+          </div>
+          <div className="text-xs text-white mt-0.5">Parallel requests</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-[#8a99ad]">Delay</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {config.delay}s
+          </div>
+          <div className="text-xs text-white mt-0.5">Between requests</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-[#8a99ad]">Timeout</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {config.timeout}s
+          </div>
+          <div className="text-xs text-white mt-0.5">Max wait time</div>
+        </div>
+
+        <div>
+          <div className="text-xs text-[#8a99ad]">Retries</div>
+          <div className="text-xl font-bold text-white mt-1">
+            {config.retries}
+          </div>
+          <div className="text-xs text-white mt-0.5">Attempts</div>
+        </div>
       </div>
     </div>
   );

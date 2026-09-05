@@ -11,7 +11,6 @@ import {
   Loader2,
   AlertTriangle,
   WifiOff,
-  LogOut,
   User,
   Bell,
   ChevronDown,
@@ -583,16 +582,6 @@ export default function DashboardLayout() {
                 </div>
               )}
             </div>
-
-            {/* Sign Out Button */}
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 rounded-lg bg-[#18181b] hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/30 text-[#d4d4d8] hover:text-rose-400 text-[13px] font-medium transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ml-1"
-              title="Sign out of ThreatLens"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
           </div>
         </header>
 

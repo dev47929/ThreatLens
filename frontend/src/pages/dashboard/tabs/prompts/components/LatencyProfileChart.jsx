@@ -93,33 +93,19 @@ export default function LatencyProfileChart({ attack }) {
   };
 
   return (
-    <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl space-y-5 w-full">
+    <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl space-y-5 w-full">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1b2838]">
-        <div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[#38bdf8]" />
-            <h2 className="text-base font-bold text-white tracking-tight">
-              Latency Profile — Detection & Response Timeline
-            </h2>
-          </div>
-          <p className="text-xs text-[#8a99ad] mt-0.5">
-            Real-time server responsiveness and guardrail inspection latency during the attack
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Attack Neutralized in {p99Latency}ms</span>
-          </span>
-        </div>
+      <div className="flex items-center gap-2">
+        <Clock className="w-4 h-4 text-[#38bdf8]" />
+        <h2 className="text-base font-bold text-white tracking-tight">
+          Latency Profile — Detection & Response Timeline
+        </h2>
       </div>
 
       {/* Main Split Layout: Minimal Graph on Left (7 cols), Simple Language Details on Right (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Side: Minimal Area Graph inspired by Image 1 */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between bg-[#0b1017]/70 border border-[#1b2738] rounded-xl p-4 sm:p-5">
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between bg-black border border-[#1b2738] rounded-xl p-4 sm:p-5">
           <div className="w-full h-72 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
@@ -227,15 +213,10 @@ export default function LatencyProfileChart({ attack }) {
         </div>
 
         {/* Right Side: Simple Language Explanation */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-between space-y-4 bg-[#0c121c]/90 border border-[#1b2738] rounded-xl p-5">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-rose-400 font-semibold text-xs uppercase tracking-wider">
-              <Zap className="w-4 h-4 text-rose-400" />
-              <span>What Happened in This Attack</span>
-            </div>
-
-            <h3 className="text-sm font-bold text-white">
-              Guardrail Intercepted Jailbreak Tokens
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-between space-y-4 bg-black border border-[#1b2738] rounded-xl p-5">
+          <div className="space-y-2">
+            <h3 className="text-base font-bold tracking-tight text-blue-500">
+              Attack Performed Summary
             </h3>
 
             <p className="text-xs text-[#8a99ad] leading-relaxed">
@@ -246,7 +227,7 @@ export default function LatencyProfileChart({ attack }) {
           {/* 3 Step Metric Cards in Simple Language */}
           <div className="space-y-2.5 pt-1">
             {/* Metric 1 */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#111927] border border-[#202e42]">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-black border border-[#202e42]">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#c084fc]" />
                 <div>
@@ -258,7 +239,7 @@ export default function LatencyProfileChart({ attack }) {
             </div>
 
             {/* Metric 2 */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#111927] border border-[#202e42]">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-black border border-[#202e42]">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#fb923c]" />
                 <div>
@@ -270,7 +251,7 @@ export default function LatencyProfileChart({ attack }) {
             </div>
 
             {/* Metric 3 */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#111927] border border-[#202e42]">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-black border border-[#202e42]">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#00f5c4]" />
                 <div>
@@ -279,15 +260,6 @@ export default function LatencyProfileChart({ attack }) {
                 </div>
               </div>
               <span className="text-xs font-mono font-bold text-[#00f5c4]">{p99Latency} ms</span>
-            </div>
-          </div>
-
-          {/* Summary Takeaway Box */}
-          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <div className="text-[11.5px] leading-snug">
-              <strong className="text-white block mb-0.5">Zero Delay for Legitimate Users</strong>
-              Normal user queries were processed seamlessly while the adversarial attack payload was isolated.
             </div>
           </div>
         </div>

@@ -93,7 +93,7 @@ export default function AttackKpiCards({ attack }) {
         return (
           <div
             key={card.id}
-            className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] hover:border-[#2f435e] rounded-xl p-4 relative overflow-hidden shadow-lg transition-all group"
+            className="bg-black backdrop-blur-md border border-[#1e2d42] hover:border-[#2f435e] rounded-xl p-4 relative overflow-hidden shadow-lg transition-all group"
           >
             {/* Left accent bar */}
             <div

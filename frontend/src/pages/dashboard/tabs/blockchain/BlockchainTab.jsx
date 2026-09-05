@@ -8,15 +8,7 @@ import {
   Check,
   Download,
   Plus,
-  Flame,
-  KeyRound,
-  FileCode,
-  FolderGit2,
-  GitCommit,
-  BarChart3,
-  ExternalLink,
   ChevronDown,
-  Sparkles,
   Layers,
   Cpu,
   Lock,
@@ -24,7 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { chainApi, ethApi, formatBytes, timeAgo } from "@/lib/api";
+import { chainApi, ethApi } from "@/lib/api";
 import BlockChainVisualizer from "./BlockChainVisualizer";
 import BlockDetailModal from "./BlockDetailModal";
 import BuildChainModal from "./BuildChainModal";
@@ -188,71 +180,66 @@ export default function BlockchainTab({
   return (
     <div className="space-y-6 select-none font-sans">
       {/* ── TOP HEADER: TITLE, CHAIN SELECTOR, ACTIONS ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1c2638]">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1b2434]">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2962FF]/20 to-[#38bdf8]/10 border border-[#2962FF]/40 flex items-center justify-center shadow-[0_0_20px_rgba(41,98,255,0.25)]">
-              <Blocks className="w-5 h-5 text-[#38bdf8]" />
+            <div className="w-9 h-9 rounded-lg bg-[#0e1726] border border-[#1e293b] flex items-center justify-center">
+              <Blocks className="w-4 h-4 text-slate-300" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold tracking-tight text-white font-mono">
-                  Blockchain & Integrity Checkpoints
-                </h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#2962FF]/20 border border-[#2962FF]/40 text-[#6EA8DA] uppercase tracking-wider">
-                  SHA-256 LEDGER
-                </span>
-              </div>
-              <p className="text-xs text-[#8a99ad] mt-0.5 font-mono">
-                Tamper-evident audit ledger · canonical cryptographic state checkpoints & evidence anchoring
+              <h1 className="text-lg font-bold tracking-tight text-white">
+                Blockchain Ledger
+              </h1>
+              <p className="text-xs text-[#64748b] mt-0.5">
+                Audit trail and integrity verification checkpoints
               </p>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={fetchBlocks}
             disabled={loadingBlocks}
-            className="p-2 rounded-lg border border-[#222f46] bg-[#0e1622] text-[#8a99ad] hover:text-white hover:border-white/20 transition-all cursor-pointer"
+            className="p-2 rounded-lg border border-[#1e293b] bg-[#0b1019] text-[#94a3b8] hover:text-white hover:border-[#334155] transition-all cursor-pointer"
             title="Refresh Chain"
           >
-            <RefreshCw className={`w-4 h-4 ${loadingBlocks ? "animate-spin text-[#38bdf8]" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingBlocks ? "animate-spin text-slate-300" : ""}`} />
           </button>
 
           <button
             onClick={handleExportJson}
             disabled={blocks.length === 0}
-            className="px-3 py-2 rounded-lg border border-[#222f46] bg-[#0e1622] text-[#d8e2e8] hover:text-white hover:border-white/20 font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Download JSON chain for independent verification"
+            className="px-3 py-1.5 rounded-lg border border-[#1e293b] bg-[#0b1019] text-[#94a3b8] hover:text-white hover:border-[#334155] text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Download JSON chain"
           >
-            <Download className="w-3.5 h-3.5 text-[#6EA8DA]" />
-            <span>Export JSON</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Export</span>
           </button>
 
           <button
             onClick={() => setIsTamperOpen(true)}
-            className="px-3.5 py-2 rounded-lg border border-[#f43f5e]/30 bg-[#f43f5e]/10 text-[#fda4af] hover:bg-[#f43f5e]/20 font-mono text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Simulate modifying a block to test cryptographic tamper detection"
+            className="px-3 py-1.5 rounded-lg border border-[#1e293b] bg-[#0b1019] hover:bg-rose-500/10 text-[#94a3b8] hover:text-rose-400 hover:border-rose-500/30 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Simulate modifying a block"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-[#f43f5e]" />
+            <ShieldAlert className="w-3.5 h-3.5" />
             <span>Tamper Test</span>
           </button>
 
           <button
             onClick={handleVerify}
             disabled={loadingBlocks || verificationStatus === "verifying"}
-            className="px-3.5 py-2 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 text-[#86efac] hover:bg-[#22c55e]/20 font-mono text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Run SHA-256 verification across all blocks"
+            className="px-3 py-1.5 rounded-lg border border-[#1e293b] bg-[#0b1019] hover:bg-emerald-500/10 text-[#94a3b8] hover:text-emerald-400 hover:border-emerald-500/30 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Verify SHA-256 integrity"
           >
-            <ShieldCheck className={`w-3.5 h-3.5 ${verificationStatus === "verifying" ? "animate-pulse" : "text-[#22c55e]"}`} />
-            <span>{verificationStatus === "verifying" ? "Verifying..." : "Verify Integrity"}</span>
+            <ShieldCheck className={`w-3.5 h-3.5 ${verificationStatus === "verifying" ? "animate-pulse" : ""}`} />
+            <span>{verificationStatus === "verifying" ? "Verifying..." : "Verify Chain"}</span>
           </button>
 
           <button
             onClick={() => setIsBuildOpen(true)}
-            className="px-4 py-2 rounded-lg bg-[#2962FF] hover:bg-[#1e4ed8] text-white font-mono text-xs font-bold shadow-[0_0_15px_rgba(41,98,255,0.35)] flex items-center gap-1.5 transition-all cursor-pointer"
+            className="px-3.5 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Checkpoint</span>
@@ -261,140 +248,122 @@ export default function BlockchainTab({
       </div>
 
       {/* ── CHAIN SELECTOR STRIP ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0b0f19] border border-[#1c2638]">
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono text-[#8a99ad] uppercase tracking-wider font-semibold">
-            Active Chain:
+      <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-[#0b1019] border border-[#1e293b]">
+        <div className="flex items-center gap-2.5">
+          <span className="text-[11px] text-[#64748b] font-medium">
+            Chain:
           </span>
           {loadingChains ? (
-            <div className="h-7 w-40 bg-[#162032] rounded animate-pulse" />
+            <div className="h-7 w-36 bg-[#162032] rounded animate-pulse" />
           ) : (
             <div className="relative">
               <select
                 value={selectedChainId}
                 onChange={(e) => setSelectedChainId(e.target.value)}
-                className="appearance-none bg-[#111827] border border-[#26354a] hover:border-[#38bdf8]/50 text-white text-xs font-mono font-semibold py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer transition-all shadow-inner"
+                className="appearance-none bg-[#0e1626] border border-[#1e293b] hover:border-[#334155] text-slate-200 text-xs font-medium py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer transition-all"
               >
                 {chains.map((cid) => (
-                  <option key={cid} value={cid} className="bg-[#0b0f19] text-white">
+                  <option key={cid} value={cid} className="bg-[#0b1019] text-white">
                     {cid}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#8a99ad] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#64748b] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           )}
         </div>
 
-        {/* Tip Hash Display with One-Click Copy */}
+        {/* Tip Hash Display */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[#8a99ad]">Tip Hash:</span>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#101726] border border-[#222f46] font-mono text-[11px] text-[#38bdf8]">
-            <span className="max-w-[160px] sm:max-w-[280px] truncate" title={tipHash}>
-              {tipHash ? `${tipHash.slice(0, 16)}...${tipHash.slice(-10)}` : "None"}
+          <span className="text-[11px] text-[#64748b]">Tip Hash:</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0e1626] border border-[#1e293b] font-mono text-[11px] text-slate-400">
+            <span className="max-w-[160px] sm:max-w-[260px] truncate" title={tipHash}>
+              {tipHash ? `${tipHash.slice(0, 16)}...${tipHash.slice(-8)}` : "None"}
             </span>
             <button
               onClick={handleCopyHash}
-              className="p-1 text-[#8a99ad] hover:text-white transition-colors cursor-pointer"
-              title="Copy Full SHA-256"
+              className="p-0.5 text-[#64748b] hover:text-white transition-colors cursor-pointer"
+              title="Copy SHA-256"
             >
-              {copiedHash ? <Check className="w-3 h-3 text-[#22c55e]" /> : <Copy className="w-3 h-3" />}
+              {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
           </div>
         </div>
       </div>
 
       {/* ── KPI METRICS GRID ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-        {/* Card 1: Chain Height */}
-        <div className="p-4 rounded-xl bg-[#0e1622]/80 border border-[#1c2638] relative overflow-hidden group hover:border-[#2962FF]/40 transition-all">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Card 1: Total Blocks */}
+        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase text-[#8a99ad] tracking-wider font-semibold">
-              Chain Height
+            <span className="text-xs text-[#64748b] font-medium">
+              Total Blocks
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#2962FF]/10 border border-[#2962FF]/20 flex items-center justify-center">
-              <Layers className="w-3.5 h-3.5 text-[#6EA8DA]" />
-            </div>
+            <Layers className="w-4 h-4 text-[#64748b]" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-white tracking-tight">
+          <div className="mt-2 text-xl font-bold text-white tracking-tight">
             {loadingBlocks ? (
-              <div className="h-7 w-16 bg-[#1a2436] rounded animate-pulse" />
+              <div className="h-6 w-16 bg-[#162032] rounded animate-pulse" />
             ) : (
               `${chainHeight} Blocks`
             )}
           </div>
-          <div className="mt-1 text-[11px] text-[#8a99ad] flex items-center gap-1.5">
-            <span className="text-[#22c55e]">● Genesis to Tip</span>
-            <span>· 100% Linked</span>
+          <div className="mt-1 text-[11px] text-[#64748b]">
+            From Genesis to Tip
           </div>
         </div>
 
-        {/* Card 2: Cryptographic Health */}
-        <div className="p-4 rounded-xl bg-[#0e1622]/80 border border-[#1c2638] relative overflow-hidden group hover:border-[#22c55e]/40 transition-all">
+        {/* Card 2: Status */}
+        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase text-[#8a99ad] tracking-wider font-semibold">
-              Integrity Status
+            <span className="text-xs text-[#64748b] font-medium">
+              Status
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/20 flex items-center justify-center">
-              <Lock className="w-3.5 h-3.5 text-[#22c55e]" />
-            </div>
+            <Lock className="w-4 h-4 text-[#64748b]" />
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight flex items-center gap-2">
+          <div className="mt-2 text-xl font-bold tracking-tight">
             {verificationStatus === "verified" ? (
-              <span className="text-[#22c55e]">Verified</span>
+              <span className="text-emerald-400">Verified</span>
             ) : verificationStatus === "verifying" ? (
-              <span className="text-[#38bdf8] animate-pulse">Auditing...</span>
+              <span className="text-slate-300 animate-pulse">Checking...</span>
             ) : (
-              <span className="text-[#f43f5e]">Tampered</span>
+              <span className="text-rose-400">Tampered</span>
             )}
           </div>
-          <div className="mt-1 text-[11px] text-[#8a99ad]">
-            SHA-256 Canonical Consensus
+          <div className="mt-1 text-[11px] text-[#64748b]">
+            SHA-256 Linked
           </div>
         </div>
 
-        {/* Card 3: Genesis / Creator */}
-        <div className="p-4 rounded-xl bg-[#0e1622]/80 border border-[#1c2638] relative overflow-hidden group hover:border-[#a855f7]/40 transition-all">
+        {/* Card 3: Created By */}
+        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase text-[#8a99ad] tracking-wider font-semibold">
-              Genesis Creator
+            <span className="text-xs text-[#64748b] font-medium">
+              Created By
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#a855f7]/10 border border-[#a855f7]/20 flex items-center justify-center">
-              <Cpu className="w-3.5 h-3.5 text-[#c084fc]" />
-            </div>
+            <Cpu className="w-4 h-4 text-[#64748b]" />
           </div>
-          <div className="mt-2 text-base font-bold text-white truncate" title={creatorName}>
+          <div className="mt-2 text-base font-semibold text-white truncate" title={creatorName}>
             {creatorName}
           </div>
-          <div className="mt-1 text-[11px] text-[#8a99ad]">
-            {genesisBlock?.created_at ? timeAgo(genesisBlock.created_at) : "Immutable Origin"}
+          <div className="mt-1 text-[11px] text-[#64748b]">
+            Ledger Owner
           </div>
         </div>
 
-        {/* Card 4: Trust Layer / Ethereum Anchor */}
-        <div className="p-4 rounded-xl bg-[#0e1622]/80 border border-[#1c2638] relative overflow-hidden group hover:border-[#f59e0b]/40 transition-all">
+        {/* Card 4: Network Anchor */}
+        <div className="p-4 rounded-xl bg-[#0b1019] border border-[#1e293b]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase text-[#8a99ad] tracking-wider font-semibold">
-              Trust Layer
+            <span className="text-xs text-[#64748b] font-medium">
+              Network
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/20 flex items-center justify-center">
-              <Activity className="w-3.5 h-3.5 text-[#fbbf24]" />
-            </div>
+            <Activity className="w-4 h-4 text-[#64748b]" />
           </div>
-          <div className="mt-2 text-base font-bold text-white flex items-center gap-1.5">
-            {ethAnchor ? (
-              <span className="text-[#fbbf24] flex items-center gap-1">
-                <span>Ethereum L1</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#f59e0b]/20 text-[#fbbf24] font-normal">
-                  #{ethAnchor.block_no || "19.4M"}
-                </span>
-              </span>
-            ) : (
-              <span className="text-[#38bdf8]">Internal Checkpoint</span>
-            )}
+          <div className="mt-2 text-base font-semibold text-white">
+            {ethAnchor ? "Ethereum L1" : "Local Ledger"}
           </div>
-          <div className="mt-1 text-[11px] text-[#8a99ad]">
-            {ethAnchor ? "Public Trust Anchored" : "Local Cryptographic Ledger"}
+          <div className="mt-1 text-[11px] text-[#64748b]">
+            {ethAnchor ? "Public Attestation" : "Internal Checkpoint"}
           </div>
         </div>
       </div>

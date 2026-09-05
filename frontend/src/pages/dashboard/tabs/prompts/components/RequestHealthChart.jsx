@@ -99,33 +99,19 @@ export default function RequestHealthChart({ attack }) {
   };
 
   return (
-    <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl space-y-5 w-full">
+    <div className="bg-black backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl space-y-5 w-full">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1b2838]">
-        <div>
-          <div className="flex items-center gap-2">
-            <HeartPulse className="w-4 h-4 text-[#38bdf8]" />
-            <h2 className="text-base font-bold text-white tracking-tight">
-              Request Health — Attack Interception Breakdown
-            </h2>
-          </div>
-          <p className="text-xs text-[#8a99ad] mt-0.5">
-            Breakdown of malicious prompt injections stopped versus safe queries allowed
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/25 text-[#60a5fa] text-xs font-semibold flex items-center gap-1.5 font-mono">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{blockPercent}% Attacks Blocked</span>
-          </span>
-        </div>
+      <div className="flex items-center gap-2">
+        <HeartPulse className="w-4 h-4 text-[#38bdf8]" />
+        <h2 className="text-base font-bold text-white tracking-tight">
+          Request Health — Attack Interception Breakdown
+        </h2>
       </div>
 
       {/* Main Split Layout: Minimal Stacked Bar Chart on Left (7 cols), Simple Details on Right (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Side: Minimal Stacked Bar Chart inspired by Image 3 */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between bg-[#0b1017]/70 border border-[#1b2738] rounded-xl p-4 sm:p-5">
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between bg-black border border-[#1b2738] rounded-xl p-4 sm:p-5">
           <div className="w-full h-72 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -191,15 +177,10 @@ export default function RequestHealthChart({ attack }) {
         </div>
 
         {/* Right Side: Simple Language Details Panel */}
-        <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-between space-y-4 bg-[#0c121c]/90 border border-[#1b2738] rounded-xl p-5">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-[#38bdf8] font-semibold text-xs uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4 text-[#38bdf8]" />
-              <span>Defense Outcome Summary</span>
-            </div>
-
-            <h3 className="text-sm font-bold text-white">
-              Target Agent 100% Protected
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-between space-y-4 bg-black border border-[#1b2738] rounded-xl p-5">
+          <div className="space-y-2">
+            <h3 className="text-base font-bold tracking-tight text-blue-500">
+              Defense Outcome Summary
             </h3>
 
             <p className="text-xs text-[#8a99ad] leading-relaxed">
@@ -210,7 +191,7 @@ export default function RequestHealthChart({ attack }) {
           {/* 3 Clear Stat Breakdown Cards */}
           <div className="space-y-2.5 pt-1">
             {/* Metric 1 - Blocked */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#111927] border border-[#202e42]">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-black border border-[#202e42]">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#2563eb]" />
                 <div>
@@ -224,7 +205,7 @@ export default function RequestHealthChart({ attack }) {
             </div>
 
             {/* Metric 2 - Safe */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#111927] border border-[#202e42]">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-black border border-[#202e42]">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-[#60a5fa]" />
                 <div>
@@ -238,7 +219,7 @@ export default function RequestHealthChart({ attack }) {
             </div>
 
             {/* Metric 3 - Attacker Penetration */}
-            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#111927] border border-[#202e42]">
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-black border border-[#202e42]">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                 <div>
@@ -247,15 +228,6 @@ export default function RequestHealthChart({ attack }) {
                 </div>
               </div>
               <span className="text-xs font-mono font-bold text-emerald-400">0% (Zero Bypass)</span>
-            </div>
-          </div>
-
-          {/* Summary Takeaway Box */}
-          <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-[11.5px] leading-snug">
-              <strong className="text-white block mb-0.5">Audit Trail Recorded</strong>
-              Every blocked adversarial attempt has been cryptographically signed and stored in the ThreatLens ledger.
             </div>
           </div>
         </div>
