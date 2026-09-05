@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { chainApi, ethApi, formatBytes, timeAgo } from "@/lib/api";
 import BlockChainVisualizer from "./BlockChainVisualizer";
+import BlockDetailModal from "./BlockDetailModal";
 
 export default function BlockchainTab({
   onInspectBlock,
@@ -42,6 +43,7 @@ export default function BlockchainTab({
   const [verificationStatus, setVerificationStatus] = useState("verified"); // 'verified' | 'verifying' | 'tampered'
   const [ethAnchor, setEthAnchor] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [scanningIndex, setScanningIndex] = useState(null);
   const [tamperedBlockIndex, setTamperedBlockIndex] = useState(null);
 
@@ -379,10 +381,23 @@ export default function BlockchainTab({
         activeBlockIndex={selectedBlock?.index}
         onSelectBlock={(block) => {
           setSelectedBlock(block);
+          setIsDetailOpen(true);
           onInspectBlock?.(block);
         }}
         verificationScanningIndex={scanningIndex}
         tamperedBlockIndex={tamperedBlockIndex}
+      />
+
+      {/* ── DEEP BLOCK INSPECTOR MODAL ── */}
+      <BlockDetailModal
+        block={selectedBlock}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        onSelectBlockByIndex={(targetIdx) => {
+          const found = blocks.find((b) => b.index === targetIdx);
+          if (found) setSelectedBlock(found);
+        }}
+        totalBlocks={blocks.length}
       />
     </div>
   );
