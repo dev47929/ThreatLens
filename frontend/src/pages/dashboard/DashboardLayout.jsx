@@ -30,6 +30,7 @@ import {
   LayoutDashboard,
   BookOpen,
   Blocks,
+  Crosshair,
 } from "lucide-react";
 
 // Domain-Based Tab Views
@@ -41,6 +42,7 @@ import AccountsTab from "./tabs/admin/AccountsTab";
 import SystemConfigTab from "./tabs/admin/SystemConfigTab";
 import SessionsTab from "./tabs/admin/SessionsTab";
 import PromptHistoryTab from "./tabs/prompts/PromptHistoryTab";
+import AttackHistoryTab from "./tabs/prompts/AttackHistoryTab";
 import TokenUsageTab from "./tabs/billing/TokenUsageTab";
 import CliAgentTab from "./tabs/docs/CliAgentTab";
 
@@ -72,6 +74,7 @@ const NAV_CATEGORIES = [
     title: "Terminal",
     items: [
       { id: "prompts", label: "Prompt history", icon: Sparkles },
+      { id: "attack-history", label: "Attack history", icon: Crosshair },
     ],
   },
   {
@@ -568,6 +571,8 @@ export default function DashboardLayout() {
             </main>
           ) : activeNav === "prompts" || activeNav === "threatlensgo" ? (
             <PromptHistoryTab user={user} />
+          ) : activeNav === "attack-history" ? (
+            <AttackHistoryTab user={user} />
           ) : (
           /* Main Content */
           <main className="p-8 lg:p-10 pb-20 space-y-7 max-w-[1600px] w-full">
