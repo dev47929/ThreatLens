@@ -298,6 +298,17 @@ export default function AttackHistoryTab({
     }
   };
 
+  // If an attack is selected, render the dedicated full-page AttackDetailView
+  // This keeps DashboardLayout's top header breadcrumb visible!
+  if (selectedAttack) {
+    return (
+      <AttackDetailView
+        attack={selectedAttack}
+        onBack={() => handleSelectAttack(null)}
+      />
+    );
+  }
+
   return (
     <div className="relative w-full flex flex-col pb-24">
       {/* Background Gradient Waves Animation */}
@@ -712,16 +723,6 @@ export default function AttackHistoryTab({
               </div>
             </form>
           </div>
-        </div>
-      )}
-
-      {/* RENDER DEDICATED FULL ATTACK DETAIL VIEW WHEN ATTACK IS SELECTED */}
-      {selectedAttack && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#080d1a]">
-          <AttackDetailView
-            attack={selectedAttack}
-            onBack={() => handleSelectAttack(null)}
-          />
         </div>
       )}
     </div>
