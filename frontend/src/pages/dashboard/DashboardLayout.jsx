@@ -35,7 +35,6 @@ import {
 // Domain-Based Tab Views
 import RepositoriesTab from "./tabs/repositories/RepositoriesTab";
 import CommitsTab from "./tabs/commits/CommitsTab";
-import LiveFindingsTab from "./tabs/security/LiveFindingsTab";
 import LiveAttacksTab from "./tabs/security/LiveAttacksTab";
 import BlockchainTab from "./tabs/blockchain/BlockchainTab";
 import AccountsTab from "./tabs/admin/AccountsTab";
@@ -64,7 +63,6 @@ const NAV_CATEGORIES = [
     id: "security",
     title: "Security",
     items: [
-      { id: "findings", label: "Live findings", icon: ShieldAlert },
       { id: "live-attacks", label: "Live attacks", icon: Flame },
       { id: "blockchain", label: "Blockchain", icon: Blocks },
     ],
@@ -593,7 +591,7 @@ export default function DashboardLayout() {
                     Export report
                   </button>
                   <button
-                    onClick={() => setActiveNav("findings")}
+                    onClick={() => setActiveNav("live-attacks")}
                     className="px-4 py-2 rounded-lg bg-[#2962FF] hover:bg-[#1e4ed8] text-white font-semibold shadow-[0_0_15px_rgba(41,98,255,0.35)] transition-all cursor-pointer"
                   >
                     Run new scan
@@ -957,8 +955,6 @@ export default function DashboardLayout() {
           {activeNav === "repositories" && <RepositoriesTab onInspectCommit={handleOpenDetail} />}
 
           {activeNav === "commits" && <CommitsTab onInspectCommit={handleOpenDetail} />}
-
-          {activeNav === "findings" && <LiveFindingsTab onInspectFinding={handleOpenDetail} />}
 
           {activeNav === "live-attacks" && <LiveAttacksTab />}
 
