@@ -211,10 +211,6 @@ export default function BlockchainVisualizer({
       </div>
     );
   }
-        </p>
-      </div>
-    );
-  }
 
   const maxBlockHeight = Math.max(...blocks.map((b) => Number(b.index)));
 
@@ -336,8 +332,6 @@ export default function BlockchainVisualizer({
                         }
                         >
                           {block.type}
-                        </span>
-                      </div>
                         </span>
                       </div>
 

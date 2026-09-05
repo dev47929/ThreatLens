@@ -126,15 +126,6 @@ function normalizeBackendAttack(item, userEmail) {
       })
     : "Recently";
 
-  const payloadStr =
-    item.payload ||
-    (configObj.attack
-      ? JSON.stringify(configObj.attack)
-      : item.request?.request?.body
-      ? JSON.stringify(item.request.request.body)
-      : targetObj.query_params
-      ? JSON.stringify(targetObj.query_params)
-      : `${targetObj.method || "GET"} ${targetObj.endpoint || "/"}`);
   const attempted =
     item.status?.progress?.attempted_requests ??
     item.status?.progress?.planned_requests ??

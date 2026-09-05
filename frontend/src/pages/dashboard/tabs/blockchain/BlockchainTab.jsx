@@ -16,9 +16,7 @@ import {
   Cpu,
   Lock,
   Activity,
-  ChevronDown,
   Trash2,
-  FilePlus,
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -333,7 +331,6 @@ export default function BlockchainTab({
 
           {/* Append Block */}
           <button
-          <button
             onClick={() => setIsAppendOpen(true)}
             disabled={!selectedChainId}
             className="px-3.5 py-2 rounded-lg border border-[#38bdf8]/40 bg-[#38bdf8]/10 hover:bg-[#38bdf8]/20 text-[#38bdf8] font-mono text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-40"
@@ -347,10 +344,6 @@ export default function BlockchainTab({
             onClick={() => setIsCreateOpen(true)}
             className="px-3.5 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] border border-[#334155] text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
             title="Create a new internal blockchain ledger"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New Chain</span>
-          </button>
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Chain</span>
