@@ -19,10 +19,8 @@ def post_attack_route(
     attack: AttackCreate,
     user: dict = Depends(auth.deps.get_current),
 ):
-    account_id = user["account"]["id"]
-
     return post_attack(
-        account_id=account_id,
+        user=user,
         **attack.model_dump(),
     )
 

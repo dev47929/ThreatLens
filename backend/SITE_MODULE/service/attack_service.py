@@ -1,16 +1,24 @@
 from SITE_MODULE.db import Attack
 from connect import session_factory
 from utils.get_helper import to_dict , to_list_dict
+from .email_service import send_attack_report
+
+import threading
+
+
 
 
 def post_attack(
-    account_id: int,
+    user: dict,
     attack_id: str,
     attack_type: str,
     request: dict,
     status: str,
     plot: dict,
 ) -> Attack:
+    
+    account_id= user["account"]["id"]
+    user_email = user["account"]["email"]
     
     db = session_factory()
     attack = Attack(
@@ -23,7 +31,14 @@ def post_attack(
     )
     db.add(attack)
     db.commit()
-    return to_dict(attack)
+    db.refresh(attack)
+    attack = to_dict(attack)
+    threading.Thread(
+        target=send_attack_report,
+        args=(user_email, attack),
+        daemon=True,
+    ).start()
+    return attack
 
 
 
