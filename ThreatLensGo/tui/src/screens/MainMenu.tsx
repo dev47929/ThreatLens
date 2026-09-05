@@ -91,7 +91,7 @@ const COMMANDS: CommandItem[] = [
     shortcut: '8',
   },
   {
-    label: '9. Configure Target URL (Set active target endpoint for this session)',
+    label: '9. Configure Target & Request (Set active target endpoint, method, headers & auth)',
     value: 'targetUrl',
     shortcut: '9',
   },

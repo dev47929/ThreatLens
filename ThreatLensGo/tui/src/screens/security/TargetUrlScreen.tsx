@@ -1,74 +1,142 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import TextInput from 'ink-text-input';
 import { useNavigation } from '../../state/navigation.js';
-import { useSecuritySession } from '../../state/securitySession.js';
+import { useSecuritySession, AttackTargetConfig, AttackRequestConfig } from '../../state/securitySession.js';
 import { TerminalLayout } from '../../components/TerminalLayout.js';
 import { Select } from '../../components/Select.js';
+import { TargetRequestEditor } from '../../components/TargetRequestEditor.js';
 
-// Regex allowing localhost, domain names, IPv4, IPv6, and ports
-const URL_REGEX = /^https?:\/\/([a-zA-Z0-9-._]+|\[[0-9a-fA-F:]+\])(:\d+)?(\/.*)?$/i;
-
-interface PresetOption {
+interface PresetItem {
   label: string;
   value: string;
+  target?: AttackTargetConfig;
+  request?: AttackRequestConfig;
 }
 
-const PRESETS: PresetOption[] = [
-  { label: '1. Port 8001 — Healthy Secure API (FastAPI Reference)', value: 'http://localhost:8001' },
-  { label: '2. Port 8003 — Vulnerable Fintech API (SSRF, Auth & Balance)', value: 'http://localhost:8003' },
-  { label: '3. Port 8004 — Vulnerable Social Node (XSS, JWT & Posts)', value: 'http://localhost:8004' },
-  { label: '4. Port 8005 — Vulnerable Hospital Node (IDOR & Uploads)', value: 'http://localhost:8005' },
-  { label: '5. Custom Target URL (Enter custom IP / Host / Port)...', value: 'custom' },
+const PRESET_OPTIONS: PresetItem[] = [
+  {
+    label: '1. Port 8000 — ThreatLens Auth Pulse (http://localhost:8000/tc-auth/config/pulse [GET])',
+    value: 'tl_pulse',
+    target: {
+      base_url: 'http://localhost:8000',
+      endpoint: '/tc-auth/config/pulse',
+      method: 'GET',
+      path_params: null,
+      query_params: null,
+    },
+    request: {
+      headers: null,
+      auth: null,
+      body: null,
+    },
+  },
+  {
+    label: '2. Port 8001 — Healthy Secure API Reference (http://localhost:8001/health [GET])',
+    value: 'port_8001',
+    target: {
+      base_url: 'http://localhost:8001',
+      endpoint: '/health',
+      method: 'GET',
+      path_params: null,
+      query_params: null,
+    },
+    request: {
+      headers: null,
+      auth: null,
+      body: null,
+    },
+  },
+  {
+    label: '3. Port 8003 — Vulnerable Fintech API (http://localhost:8003/api/auth/login [POST])',
+    value: 'port_8003',
+    target: {
+      base_url: 'http://localhost:8003',
+      endpoint: '/api/auth/login',
+      method: 'POST',
+      path_params: null,
+      query_params: null,
+    },
+    request: {
+      headers: { 'Content-Type': 'application/json' },
+      auth: null,
+      body: { username: 'admin', password: 'password123' },
+    },
+  },
+  {
+    label: '4. Port 8004 — Vulnerable Social Node (http://localhost:8004/api/feed/search [GET])',
+    value: 'port_8004',
+    target: {
+      base_url: 'http://localhost:8004',
+      endpoint: '/api/feed/search',
+      method: 'GET',
+      path_params: null,
+      query_params: { q: 'security' },
+    },
+    request: {
+      headers: null,
+      auth: null,
+      body: null,
+    },
+  },
+  {
+    label: '5. Port 8005 — Vulnerable Hospital Node (http://localhost:8005/api/patients/1 [GET])',
+    value: 'port_8005',
+    target: {
+      base_url: 'http://localhost:8005',
+      endpoint: '/api/patients/1',
+      method: 'GET',
+      path_params: null,
+      query_params: null,
+    },
+    request: {
+      headers: null,
+      auth: null,
+      body: null,
+    },
+  },
+  {
+    label: '6. ⚙️ Customize Target & Request (Base URL, Endpoint, Method, Headers, Auth, Body)...',
+    value: 'custom',
+  },
 ];
 
 export const TargetUrlScreen: React.FC = () => {
-  const { pop, replace } = useNavigation();
-  const { targetUrl: existingUrl, setTargetUrl } = useSecuritySession();
+  const { pop, replace, canGoBack } = useNavigation();
+  const { targetConfig, requestConfig, setTargetAndRequest } = useSecuritySession();
 
-  const [mode, setMode] = useState<'preset' | 'custom'>(existingUrl ? 'custom' : 'preset');
-  const [urlInput, setUrlInput] = useState(existingUrl || 'http://localhost:8001');
-  const [error, setError] = useState('');
+  const [mode, setMode] = useState<'preset' | 'editor'>('preset');
 
   const isInteractive = Boolean(process.stdin?.isTTY);
 
-  const applyUrl = useCallback(
-    (url: string) => {
-      const trimmed = url.trim();
-      if (!trimmed) {
-        setError('Target URL cannot be empty.');
-        return;
-      }
-      if (!URL_REGEX.test(trimmed)) {
-        setError('Invalid URL. Must include protocol (e.g. http://localhost:8001 or https://example.com)');
-        return;
-      }
-      setError('');
-      setTargetUrl(trimmed);
-      replace({ type: 'securityMenu' });
-    },
-    [setTargetUrl, replace]
-  );
-
-  const handlePresetSelect = (item: PresetOption) => {
+  const handlePresetSelect = (item: PresetItem) => {
     if (item.value === 'custom') {
-      setMode('custom');
-    } else {
-      applyUrl(item.value);
+      setMode('editor');
+      return;
+    }
+
+    if (item.target && item.request) {
+      setTargetAndRequest(item.target, item.request);
+      if (canGoBack) {
+        pop();
+      } else {
+        replace({ type: 'securityMenu' });
+      }
     }
   };
 
-  const handleSubmit = useCallback(
-    (value: string) => {
-      applyUrl(value);
-    },
-    [applyUrl]
-  );
+  const handleEditorSave = (newTarget: AttackTargetConfig, newRequest: AttackRequestConfig) => {
+    setTargetAndRequest(newTarget, newRequest);
+    if (canGoBack) {
+      pop();
+    } else {
+      replace({ type: 'securityMenu' });
+    }
+  };
 
   useInput(
     (_input, key) => {
       if (key.escape) {
-        if (mode === 'custom' && !existingUrl) {
+        if (mode === 'editor') {
           setMode('preset');
         } else {
           pop();
@@ -80,60 +148,50 @@ export const TargetUrlScreen: React.FC = () => {
 
   return (
     <TerminalLayout
-      title="Target Endpoint Configuration"
-      subtitle="Select a dummy test backend or specify a custom root target URL"
+      title="Target & Request Configuration"
+      subtitle="Select a target preset or customize endpoint, HTTP method, headers, auth & body"
       breadcrumb="SECURITY > TARGET CONFIG"
       accentColor="yellow"
-      statusText={error ? 'INVALID TARGET URL' : 'AWAITING TARGET'}
-      statusType={error ? 'error' : 'ready'}
-      keyHints={mode === 'preset' ? '↑↓ choose preset · enter select · esc back' : 'enter confirm · esc back'}
+      statusText={mode === 'editor' ? 'CUSTOM CONFIGURATION' : 'AWAITING SELECTION'}
+      statusType="ready"
+      keyHints={mode === 'preset' ? '↑↓ choose preset · enter select · esc back' : 'enter select/confirm · esc cancel'}
     >
       <Box flexDirection="column" marginY={1}>
+        {/* Active Target Banner */}
+        <Box
+          borderStyle="single"
+          borderColor="gray"
+          paddingX={1}
+          marginBottom={1}
+          flexDirection="column"
+        >
+          <Text color="gray">
+            Current Session Target:{' '}
+            <Text bold color="yellow">[{targetConfig.method}]</Text>{' '}
+            <Text bold color="cyan">{targetConfig.base_url}{targetConfig.endpoint}</Text>
+          </Text>
+          <Text color="gray" dimColor>
+            Headers: {targetConfig.query_params ? JSON.stringify(targetConfig.query_params) : 'none'} · Auth: {requestConfig.auth ? 'configured' : 'none'}
+          </Text>
+        </Box>
+
         {mode === 'preset' ? (
           <Box flexDirection="column">
             <Text bold color="white">
-              Select Active Target Endpoint:
+              Select Active Target Endpoint Preset:
             </Text>
             <Box marginTop={1}>
-              <Select items={PRESETS} onSelect={handlePresetSelect} isFocused={isInteractive} />
+              <Select items={PRESET_OPTIONS} onSelect={handlePresetSelect} isFocused={isInteractive} />
             </Box>
           </Box>
         ) : (
-          <Box flexDirection="column">
-            <Box flexDirection="row" marginY={1}>
-              <Box width={20}>
-                <Text bold color="yellow">
-                  › Target URL:
-                </Text>
-              </Box>
-              <Box flexGrow={1}>
-                <TextInput
-                  value={urlInput}
-                  onChange={(val) => {
-                    setUrlInput(val);
-                    if (error) setError('');
-                  }}
-                  onSubmit={handleSubmit}
-                  focus={isInteractive}
-                  placeholder="http://localhost:8001"
-                />
-              </Box>
-            </Box>
-
-            {error ? (
-              <Box marginTop={1} paddingLeft={2}>
-                <Text color="red" bold>
-                  ✗ {error}
-                </Text>
-              </Box>
-            ) : null}
-
-            <Box marginTop={1}>
-              <Text color="gray" dimColor>
-                Press <Text bold color="white">[Esc]</Text> to view preset targets list.
-              </Text>
-            </Box>
-          </Box>
+          <TargetRequestEditor
+            initialTarget={targetConfig}
+            initialRequest={requestConfig}
+            onSave={handleEditorSave}
+            onCancel={() => setMode('preset')}
+            title="Custom Target & Request Configuration"
+          />
         )}
       </Box>
     </TerminalLayout>
@@ -141,3 +199,4 @@ export const TargetUrlScreen: React.FC = () => {
 };
 
 export default TargetUrlScreen;
+
