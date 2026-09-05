@@ -470,7 +470,7 @@ export default function AttackHistoryTab({
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 p-8 lg:p-10 space-y-6 max-w-[1600px] w-full">
+      <div className="relative z-10 p-6 lg:p-8 space-y-6 w-full">
         {/* Top Header & Action Controls */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-1">
           <div>
@@ -582,19 +582,21 @@ export default function AttackHistoryTab({
           {/* ========================================================================= */}
           {/* ATTACKS HISTORY TABLE                                                     */}
           {/* ========================================================================= */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="w-full">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="border-b border-[#1b2636] text-[12px] font-semibold text-[#8a99ad]">
-                  <th className="pb-3.5 font-medium">Attack Name</th>
-                  <th className="pb-3.5 font-medium">Attack Prompt</th>
-                  <th className="pb-3.5 font-medium">Severity & Result</th>
-                  <th className="pb-3.5 font-medium">Target Endpoint</th>
-                  <th className="pb-3.5 font-medium cursor-pointer flex items-center gap-1">
-                    <span>Executed At</span>
-                    <ArrowDown className="w-3.5 h-3.5" />
+                  <th className="pb-3.5 pr-2 font-medium w-[18%]">Attack Name</th>
+                  <th className="pb-3.5 px-3 font-medium w-[27%]">Attack Prompt</th>
+                  <th className="pb-3.5 px-3 font-medium w-[18%]">Severity & Result</th>
+                  <th className="pb-3.5 px-3 font-medium w-[22%]">Target Endpoint</th>
+                  <th className="pb-3.5 px-3 font-medium w-[15%]">
+                    <div className="flex items-center gap-1 cursor-pointer">
+                      <span>Executed At</span>
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </div>
                   </th>
-                  <th className="pb-3.5 w-10"></th>
+                  <th className="pb-3.5 w-8 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#182332]">
@@ -643,14 +645,17 @@ export default function AttackHistoryTab({
                         className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
                       >
                         {/* 1) Attack Name */}
-                        <td className="py-3.5 pr-4 align-middle whitespace-nowrap">
-                          <span className="text-[13px] font-semibold text-white group-hover:text-rose-400 transition-colors">
+                        <td className="py-3.5 pr-2 align-middle">
+                          <span
+                            className="text-[13px] font-semibold text-white group-hover:text-rose-400 transition-colors truncate block"
+                            title={a.name || a.category}
+                          >
                             {a.name || a.category}
                           </span>
                         </td>
 
                         {/* 2) Attack Prompt */}
-                        <td className="py-3.5 px-4 align-middle max-w-[280px] lg:max-w-[420px]">
+                        <td className="py-3.5 px-3 align-middle">
                           <div
                             className="bg-black border border-[#1e2d3d] px-2.5 py-1.5 rounded-lg text-[11.5px] font-mono text-[#94a3b8] truncate group-hover:border-rose-500/30 group-hover:text-slate-200 transition-colors"
                             title={a.attackPrompt || a.payload}
@@ -659,11 +664,11 @@ export default function AttackHistoryTab({
                           </div>
                         </td>
 
-                        {/* 3) Severity & Result (Simplified) */}
-                        <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                          <div className="flex items-center gap-2">
+                        {/* 3) Severity & Result */}
+                        <td className="py-3.5 px-3 align-middle">
+                          <div className="flex items-center gap-1.5 flex-nowrap">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10.5px] font-semibold border ${getSeverityBadgeClass(
+                              className={`px-2 py-0.5 rounded text-[10.5px] font-semibold border shrink-0 ${getSeverityBadgeClass(
                                 a.severity
                               )}`}
                             >
@@ -671,34 +676,34 @@ export default function AttackHistoryTab({
                             </span>
 
                             <span
-                              className={`px-2 py-0.5 rounded text-[10.5px] font-medium flex items-center gap-1 border ${statusMeta.class}`}
+                              className={`px-2 py-0.5 rounded text-[10.5px] font-medium flex items-center gap-1 border shrink-0 ${statusMeta.class}`}
                             >
-                              <StatusIcon className="w-3 h-3" />
+                              <StatusIcon className="w-3 h-3 shrink-0" />
                               <span>{a.status}</span>
                             </span>
                           </div>
                         </td>
 
                         {/* 4) Target Endpoint */}
-                        <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                          <div className="flex items-center gap-2 text-xs text-[#d8e2e8]">
-                            <Bot className="w-3.5 h-3.5 text-[#38bdf8]" />
-                            <span className="font-mono text-white text-[11.5px]">{a.target}</span>
+                        <td className="py-3.5 px-3 align-middle">
+                          <div className="flex items-center gap-1.5 text-xs text-[#d8e2e8] min-w-0" title={a.target}>
+                            <Bot className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
+                            <span className="font-mono text-white text-[11.5px] truncate">{a.target}</span>
                           </div>
                         </td>
 
                         {/* 5) Executed At & Performed By */}
-                        <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                          <div className="text-xs text-[#e2e8f0] font-normal">
+                        <td className="py-3.5 px-3 align-middle">
+                          <div className="text-xs text-[#e2e8f0] font-normal truncate">
                             {a.executedAt}
                           </div>
-                          <div className="text-[11px] text-[#8a99ad] mt-0.5 font-mono">
+                          <div className="text-[11px] text-[#8a99ad] mt-0.5 font-mono truncate" title={a.authorEmail}>
                             {a.authorEmail}
                           </div>
                         </td>
 
                         {/* 6) Menu Actions */}
-                        <td className="py-3.5 pl-2 pr-1 text-right align-middle relative action-menu-container">
+                        <td className="py-3.5 pl-1 pr-1 text-right align-middle relative action-menu-container">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
