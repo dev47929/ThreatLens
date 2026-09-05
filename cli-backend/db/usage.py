@@ -59,6 +59,7 @@ def get_usage():
 def patch_usage(
     prompt_tokens: int,
     completion_tokens: int,
+    total_tokens: int = 0
 ):
 
     total_tokens = prompt_tokens + completion_tokens 

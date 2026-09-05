@@ -75,6 +75,18 @@ def get_chain(
         limit=limit,
     )
 
+@router.get("/{chain_id}/latest")
+def get_latest_block(
+    chain_id: str,
+    user: dict = Depends(auth.deps.get_current),
+):
+    chain : InternalChain = InternalChain(
+        chain_name=chain_id,
+        user=user,
+    )
+
+    return chain.get_latest_block()
+
 
 @router.get("/{chain_id}/verify")
 def verify_chain(
