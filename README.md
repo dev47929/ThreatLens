@@ -302,7 +302,7 @@ erDiagram
 
     USAGE {
         int id PK
-        int account_id FK UK
+        int account_id FK "unique"
         string plan "free, pro, enterprise"
         bigint prompt_tokens
         bigint completion_tokens
