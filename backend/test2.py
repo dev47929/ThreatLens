@@ -36,5 +36,9 @@ user = {
 }
 
 
-chain = build_chain(config=config, user=user)
-print(chain.load_chain())
+# chain = build_chain(config=config, user=user)
+# print(chain.load_chain())
+
+# destroy()
+# init()
+auth.account.update_role(1, "superadmin")

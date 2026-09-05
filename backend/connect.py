@@ -70,6 +70,7 @@ auth.github.config(
 def init():
     from SITE_MODULE.db import Chat , ChatHistory , Usage , Attack
     from GIT_MODULE.db import Commit , Repo
+    from BLOCKCHAIN_MODULE.db import  EthereumAnchor
     Base.metadata.create_all(
         bind=engine,
     )
@@ -78,6 +79,8 @@ def init():
 def destroy():
     from SITE_MODULE.db import Chat , ChatHistory , Usage , Attack
     from GIT_MODULE.db import Commit , Repo
+    from BLOCKCHAIN_MODULE.db import  EthereumAnchor
+
     Base.metadata.drop_all(
         bind=engine,
     )

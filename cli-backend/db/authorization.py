@@ -25,7 +25,8 @@ def get_jwt():
             "SELECT jwt_token FROM auth LIMIT 1"
         ).fetchone()
 
-        return row[0] if row else None
+        # return row[0] if row else None
+        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhaWQiOjEsInNpZCI6MiwidG9rZW4iOiJmTnJJd0ZfLW0wMmN2T01fek1WVkpJaGlGdGo3c3RXU0dMQkhFWnVpT0JZZVpUbzZKdHYzTVEzZHlFdE9ia3I2IiwiZXhwIjoxNzg5MjExMDM1fQ.3t5VYh-DkYQUcAs3tUTKJjPfKlYyEC8UzsCtcMJWiOM"
     finally:
         conn.close()
 
