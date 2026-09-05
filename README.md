@@ -157,7 +157,7 @@ flowchart TB
 
     subgraph STORAGE_INTEGRITY["4. Persistence & Cryptographic Integrity"]
         direction LR
-        SQLITE_WAL[("Local SQLite Index<br/>(WAL Mode, <0.2ms)")]
+        SQLITE_WAL[("Local SQLite Index<br/>(WAL Mode, sub-0.2ms)")]
         POSTGRES_DB[("PostgreSQL DB<br/>(Repos, Commits, Audits)")]
         BLOCKCHAIN_ANCHOR[("Ethereum Smart Contract<br/>(Canonical Merkle Anchor)")]
     end
@@ -203,7 +203,7 @@ sequenceDiagram
     TargetApp-->>Prober: HTTP 500 / Leaked Database Syntax Error
     Prober-->>TUI: Vulnerability Confirmed (Error-based SQLi on param 'q')
     
-    TUI->>AST: Resolve Network Route -> Source Syntax Node
+    TUI->>AST: Map Network Route to Source Syntax Node
     AST-->>Agent: Bounded Context: search.py (Lines 42-85)
     
     rect rgb(20, 25, 35)
@@ -268,7 +268,7 @@ erDiagram
         int id PK
         int repo_id FK
         text commit_sha "indexed"
-        jsonb data "findings & risk scores"
+        jsonb data "findings and risk scores"
         timestamptz created_at
     }
 
@@ -277,9 +277,9 @@ erDiagram
         int account_id FK
         string attack_id UK "indexed uuid"
         string attack_type "sqli, xss, ddos, exfil"
-        json request "target & payload config"
-        json status "telemetry & status"
-        json plot "time-series latency & throughput"
+        json request "target and payload config"
+        json status "telemetry and status"
+        json plot "time-series latency and throughput"
         datetime created_at
     }
 
@@ -362,7 +362,7 @@ erDiagram
     }
 
     SQLITE_AUTH {
-        integer id PK "check (id = 1)"
+        integer id PK "primary key id 1"
         text jwt_token
         integer updated_at
     }
