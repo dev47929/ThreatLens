@@ -10,7 +10,7 @@ export interface SelectOption<V extends string = string> {
   key?: string;
 }
 
-const CustomIndicator: React.FC<IndicatorProps> = ({ isSelected }) => {
+const CustomIndicator: React.FC<IndicatorProps> = React.memo(({ isSelected }) => {
   const { theme } = useTheme();
   return (
     <Box width={3}>
@@ -19,9 +19,9 @@ const CustomIndicator: React.FC<IndicatorProps> = ({ isSelected }) => {
       </Text>
     </Box>
   );
-};
+});
 
-const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
+const CustomItem: React.FC<ItemProps> = React.memo(({ isSelected, label }) => {
   const { theme } = useTheme();
   // Check if label contains description in parentheses e.g. "Option Title (Description)"
   const match = label.match(/^(.*?)\s*\((.*?)\)$/);
@@ -37,7 +37,7 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
             <Text color={theme.highlight} bold>{'▌ '}</Text>
           )}
           <Text
-            color={isSelected ? theme.text : theme.text}
+            color={theme.text}
             bold={isSelected}
             dimColor={!isSelected}
           >
@@ -65,7 +65,7 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
             <Text color={theme.highlight} bold>{'▌ '}</Text>
           )}
           <Text
-            color={isSelected ? theme.text : theme.text}
+            color={theme.text}
             bold={isSelected}
             dimColor={!isSelected}
           >
@@ -89,7 +89,7 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
         <Text color={theme.highlight} bold>{'▌ '}</Text>
       )}
       <Text
-        color={isSelected ? theme.text : theme.text}
+        color={theme.text}
         bold={isSelected}
         dimColor={!isSelected}
       >
@@ -97,13 +97,14 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
       </Text>
     </Box>
   );
-};
+});
 
 export interface SelectProps<V extends string = string> {
   items: Array<{ label: string; value: V; key?: string }>;
   onSelect: (item: { label: string; value: V }) => void;
   isFocused?: boolean;
   initialIndex?: number;
+  limit?: number;
 }
 
 export function Select<V extends string = string>({
@@ -111,6 +112,7 @@ export function Select<V extends string = string>({
   onSelect,
   isFocused = true,
   initialIndex = 0,
+  limit,
 }: SelectProps<V>): React.JSX.Element {
   return (
     <SelectInput
@@ -118,6 +120,7 @@ export function Select<V extends string = string>({
       onSelect={onSelect}
       isFocused={isFocused && Boolean(process.stdin?.isTTY)}
       initialIndex={initialIndex}
+      limit={limit}
       indicatorComponent={CustomIndicator}
       itemComponent={CustomItem}
     />

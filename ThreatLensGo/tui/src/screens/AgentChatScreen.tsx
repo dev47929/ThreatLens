@@ -7,6 +7,7 @@ import { DiffApprovalModal } from '../components/DiffApprovalModal.js';
 import { Spinner } from '../components/Spinner.js';
 import { useNavigation } from '../state/navigation.js';
 import { useTheme } from '../state/themeContext.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { THEMES } from '../theme/themes.js';
 import type { ThemeId } from '../theme/types.js';
 import { AgentController, AgentEvent, DiffApprovalPayload } from '../agent/types.js';
@@ -42,6 +43,7 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
 }) => {
   const { push, pop } = useNavigation();
   const { theme, setTheme } = useTheme();
+  const { rows } = useTerminalSize();
 
   const [controller, setController] = useState<AgentController | null>(customController || null);
   const [managerStats, setManagerStats] = useState<AgentManagerStats | null>(null);
@@ -120,6 +122,8 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
   const managerRef = useRef<ThreatLensAgentManager | null>(null);
   const textBufferRef = useRef<string>('');
   const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const thinkingBufferRef = useRef<string>('');
+  const thinkingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const flushTextBuffer = () => {
     if (textBufferRef.current) {
@@ -176,6 +180,9 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
       if (flushTimerRef.current) {
         clearTimeout(flushTimerRef.current);
       }
+      if (thinkingTimerRef.current) {
+        clearTimeout(thinkingTimerRef.current);
+      }
       if (managerRef.current) {
         managerRef.current.shutdown().catch(() => {});
       }
@@ -223,6 +230,11 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
       switch (event.type) {
         case 'token':
           setIsRunning(true);
+          if (thinkingTimerRef.current) {
+            clearTimeout(thinkingTimerRef.current);
+            thinkingTimerRef.current = null;
+          }
+          thinkingBufferRef.current = '';
           setThinkingText('');
           textBufferRef.current += event.delta;
           // 80ms batch buffer — optimal balance between responsiveness and terminal redraw frequency
@@ -236,7 +248,13 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
 
         case 'reasoning':
           setIsRunning(true);
-          setThinkingText((prev) => (prev + event.delta).slice(-160));
+          thinkingBufferRef.current = (thinkingBufferRef.current + event.delta).slice(-160);
+          if (!thinkingTimerRef.current) {
+            thinkingTimerRef.current = setTimeout(() => {
+              thinkingTimerRef.current = null;
+              setThinkingText(thinkingBufferRef.current);
+            }, 100);
+          }
           break;
 
         case 'status':
@@ -248,6 +266,11 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
             clearTimeout(flushTimerRef.current);
             flushTimerRef.current = null;
           }
+          if (thinkingTimerRef.current) {
+            clearTimeout(thinkingTimerRef.current);
+            thinkingTimerRef.current = null;
+          }
+          thinkingBufferRef.current = '';
           flushTextBuffer();
           setIsRunning(true);
           setThinkingText('');
@@ -277,6 +300,11 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
             clearTimeout(flushTimerRef.current);
             flushTimerRef.current = null;
           }
+          if (thinkingTimerRef.current) {
+            clearTimeout(thinkingTimerRef.current);
+            thinkingTimerRef.current = null;
+          }
+          thinkingBufferRef.current = '';
           flushTextBuffer();
           setActiveApproval(event.payload);
           setStatusMessage('Waiting for user code modification approval');
@@ -301,6 +329,11 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
             clearTimeout(flushTimerRef.current);
             flushTimerRef.current = null;
           }
+          if (thinkingTimerRef.current) {
+            clearTimeout(thinkingTimerRef.current);
+            thinkingTimerRef.current = null;
+          }
+          thinkingBufferRef.current = '';
           flushTextBuffer();
           setIsRunning(false);
           setThinkingText('');
@@ -325,6 +358,11 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
             clearTimeout(flushTimerRef.current);
             flushTimerRef.current = null;
           }
+          if (thinkingTimerRef.current) {
+            clearTimeout(thinkingTimerRef.current);
+            thinkingTimerRef.current = null;
+          }
+          thinkingBufferRef.current = '';
           flushTextBuffer();
           setIsRunning(false);
           setThinkingText('');
@@ -490,8 +528,10 @@ export const AgentChatScreen: React.FC<AgentChatScreenProps> = ({
   const formatSnippet = (text: string, isLatest: boolean): string => {
     if (!text) return '';
     const lines = text.split('\n');
-    if (!isLatest && lines.length > 4) {
-      return lines.slice(0, 4).join('\n') + `\n... (+${lines.length - 4} lines)`;
+    // Ensure message line height never forces Ink into whole-terminal clearTerminal mode
+    const maxLines = isLatest ? Math.max(5, Math.min(14, (rows || 24) - 18)) : 3;
+    if (lines.length > maxLines) {
+      return lines.slice(0, maxLines).join('\n') + `\n... (+${lines.length - maxLines} lines)`;
     }
     return text;
   };

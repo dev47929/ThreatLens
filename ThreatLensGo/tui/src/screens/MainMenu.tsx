@@ -106,7 +106,7 @@ export const MainMenu: React.FC = () => {
   const { push } = useNavigation();
   const { exit } = useApp();
   const { targetUrl } = useSecuritySession();
-  const { columns } = useTerminalSize();
+  const { columns, rows } = useTerminalSize();
   const { theme, setTheme } = useTheme();
 
   const [inputQuery, setInputQuery] = useState('');
@@ -338,6 +338,7 @@ export const MainMenu: React.FC = () => {
             items={COMMANDS}
             onSelect={handleSelect}
             isFocused={focusMode === 'menu'}
+            limit={rows && rows < 36 ? 7 : undefined}
           />
         </Box>
 

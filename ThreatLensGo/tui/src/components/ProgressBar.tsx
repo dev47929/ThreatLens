@@ -21,39 +21,41 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const filledCount = Math.round((clampedPercent / 100) * width);
   const emptyCount = Math.max(0, width - filledCount);
 
-  // Shimmer: a brighter position sweeps across filled region every 400ms
-  const shimmerPos = useFrameIndex(Math.max(1, filledCount + 4), 120);
   const isDone = clampedPercent >= 100;
+  const shouldShimmer = showShimmer && !isDone && filledCount > 0;
+
+  // Shimmer: a brighter position sweeps across filled region every 120ms (only when enabled)
+  const shimmerPos = useFrameIndex(Math.max(1, filledCount + 4), 120, shouldShimmer);
 
   // Build bar char-by-char for gradient edge + shimmer
-  const buildFilledBar = (): JSX.Element[] => {
-    if (filledCount === 0) return [];
+  const buildFilledBar = (): JSX.Element | JSX.Element[] | null => {
+    if (filledCount === 0) return null;
+
+    const fillColor = isDone ? 'green' : clampedPercent > 80 ? '#34D399' : color;
+
+    // Fast-path: consolidated text node when not shimmering
+    if (!shouldShimmer) {
+      if (isDone || filledCount === 1) {
+        return <Text color={fillColor}>{'█'.repeat(filledCount)}</Text>;
+      }
+      return (
+        <Text color={fillColor}>
+          {'█'.repeat(filledCount - 1)}▓
+        </Text>
+      );
+    }
+
     const cells: JSX.Element[] = [];
-
     for (let i = 0; i < filledCount; i++) {
-      // Last cell gets a gradient boundary char
       const isLast = i === filledCount - 1;
-      // Shimmer position highlight
-      const isShimmer = showShimmer && !isDone && i === shimmerPos % filledCount;
+      const isShimmer = i === shimmerPos % filledCount;
 
-      let char: string;
-      if (isDone) {
-        char = '█';
-      } else if (isLast) {
-        char = '▓';         // Soft edge at fill boundary
-      } else if (isShimmer) {
-        char = '█';         // Bright flash moving across bar
-      } else {
-        char = '█';
+      let char = '█';
+      if (isLast) {
+        char = '▓'; // Soft edge at fill boundary
       }
 
-      const cellColor = isShimmer ? '#FFFFFF' : (
-        isDone
-          ? 'green'
-          : clampedPercent > 80
-          ? '#34D399'      // Emerald transition near done
-          : color
-      );
+      const cellColor = isShimmer ? '#FFFFFF' : fillColor;
 
       cells.push(
         <Text key={i} color={cellColor} bold={isShimmer}>

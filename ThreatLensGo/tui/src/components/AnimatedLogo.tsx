@@ -52,19 +52,23 @@ function splitIntoChunks(str: string, size: number): string[] {
   return chunks;
 }
 
+// Pre-chunk static logo art once at module load to avoid 78 string allocations per frame
+const CHUNKED_LARGE_LOGO = LARGE_LOGO.map((line) => splitIntoChunks(line, 8));
+const CHUNKED_COMPACT_LOGO = COMPACT_LOGO.map((line) => splitIntoChunks(line, 4));
+
 export const AnimatedLogo: React.FC<{ subtitle?: string }> = ({
   subtitle,
 }) => {
-  const { columns } = useTerminalSize();
+  const { columns, rows } = useTerminalSize();
 
-  const isWide = columns >= 114;
-  const logoLines = isWide ? LARGE_LOGO : COMPACT_LOGO;
-  const chunkSize = isWide ? 8 : 4;
+  // Wide 6-line banner only when both width (>=114) and height (>=36) can comfortably fit without terminal overflow
+  const isWide = columns >= 114 && rows >= 36;
+  const chunkedLines = isWide ? CHUNKED_LARGE_LOGO : CHUNKED_COMPACT_LOGO;
 
-  // Wave sweep: offset advances every 120ms, creating a flowing neon gradient
-  const waveOffset = useFrameIndex(NEON_PALETTE.length, 120);
+  // Wave sweep: offset advances every 150ms, creating a silky flowing neon gradient
+  const waveOffset = useFrameIndex(NEON_PALETTE.length, 150);
 
-  // Tagline rotation every 4 seconds (independent slower tick)
+  // Tagline rotation every 4 seconds
   const taglineIndex = useFrameIndex(TAGLINES.length, 4000);
 
   const displaySubtitle = subtitle ?? TAGLINES[taglineIndex] ?? TAGLINES[0];
@@ -73,25 +77,21 @@ export const AnimatedLogo: React.FC<{ subtitle?: string }> = ({
     <Box flexDirection="column" alignItems="center" marginY={1}>
       <Box flexDirection="row" alignItems="flex-end">
         <Box flexDirection="column">
-          {logoLines.map((line, lineIndex) => {
-            const chunks = splitIntoChunks(line, chunkSize);
+          {chunkedLines.map((chunks, lineIndex) => (
+            /* Render as inline Text spans rather than flexbox Box rows to bypass Yoga flex layout overhead */
+            <Text key={lineIndex}>
+              {chunks.map((chunk, chunkIndex) => {
+                const colorIndex = (chunkIndex + waveOffset + lineIndex) % NEON_PALETTE.length;
+                const color = NEON_PALETTE[colorIndex] ?? '#38BDF8';
 
-            return (
-              <Box key={lineIndex} flexDirection="row">
-                {chunks.map((chunk, chunkIndex) => {
-                  // Offset each chunk by its position + current wave frame for the sweep effect
-                  const colorIndex = (chunkIndex + waveOffset + lineIndex) % NEON_PALETTE.length;
-                  const color = NEON_PALETTE[colorIndex] ?? '#38BDF8';
-
-                  return (
-                    <Text key={chunkIndex} color={color} bold>
-                      {chunk}
-                    </Text>
-                  );
-                })}
-              </Box>
-            );
-          })}
+                return (
+                  <Text key={chunkIndex} color={color} bold>
+                    {chunk}
+                  </Text>
+                );
+              })}
+            </Text>
+          ))}
         </Box>
 
         {/* Small by CodeSena with animated accent */}
@@ -118,4 +118,4 @@ export const AnimatedLogo: React.FC<{ subtitle?: string }> = ({
   );
 };
 
-export default AnimatedLogo;
+export default React.memo(AnimatedLogo);

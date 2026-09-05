@@ -17,22 +17,33 @@ export const useTerminalSize = (): TerminalSize => {
   const [size, setSize] = useState<TerminalSize>(getDimensions);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
     const handleResize = () => {
-      const next = getDimensions();
-      setSize((prev) => {
-        if (prev.columns === next.columns && prev.rows === next.rows) {
-          return prev;
-        }
-        return next;
-      });
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const next = getDimensions();
+        setSize((prev) => {
+          if (prev.columns === next.columns && prev.rows === next.rows) {
+            return prev;
+          }
+          return next;
+        });
+      }, 100);
     };
 
-    stdout?.on('resize', handleResize);
-    process.stdout.on('resize', handleResize);
+    const targetStream = stdout ?? process.stdout;
+    targetStream.on('resize', handleResize);
+    if (stdout && stdout !== process.stdout) {
+      process.stdout.on('resize', handleResize);
+    }
 
     return () => {
-      stdout?.off('resize', handleResize);
-      process.stdout.off('resize', handleResize);
+      if (timer) clearTimeout(timer);
+      targetStream.off('resize', handleResize);
+      if (stdout && stdout !== process.stdout) {
+        process.stdout.off('resize', handleResize);
+      }
     };
   }, [stdout]);
 

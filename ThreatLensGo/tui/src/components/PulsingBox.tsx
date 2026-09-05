@@ -31,7 +31,7 @@ export const PulsingBox: React.FC<PulsingBoxProps> = ({
   width,
   flexDirection = 'column',
 }) => {
-  const frame = useSpinnerFrame('pulse', 500);
+  const frame = useSpinnerFrame('pulse', 500, isActive);
   const borderColor = isActive
     ? (frame === '◆' || frame === '◈' ? activeColorA : activeColorB)
     : inactiveColor;

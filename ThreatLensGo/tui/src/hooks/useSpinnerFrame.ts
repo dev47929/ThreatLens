@@ -39,11 +39,15 @@ export function useSpinnerFrame(
   const frames = SPINNER_SETS[type];
   const [frameIndex, setFrameIndex] = useState(0);
 
-  useStableInterval(() => {
-    if (enabled) {
-      setFrameIndex((prev) => (prev + 1) % frames.length);
-    }
-  }, enabled ? intervalMs : 0);
+  useStableInterval(
+    () => {
+      if (enabled) {
+        setFrameIndex((prev) => (prev + 1) % frames.length);
+      }
+    },
+    intervalMs,
+    enabled
+  );
 
   return frames[frameIndex] ?? frames[0] ?? '⠋';
 }
@@ -53,13 +57,20 @@ export function useSpinnerFrame(
  */
 export function useFrameIndex(
   frameCount: number,
-  intervalMs: number = 120
+  intervalMs: number = 120,
+  enabled: boolean = true
 ): number {
   const [frameIndex, setFrameIndex] = useState(0);
 
-  useStableInterval(() => {
-    setFrameIndex((prev) => (prev + 1) % frameCount);
-  }, intervalMs);
+  useStableInterval(
+    () => {
+      if (enabled && frameCount > 0) {
+        setFrameIndex((prev) => (prev + 1) % frameCount);
+      }
+    },
+    intervalMs,
+    enabled
+  );
 
   return frameIndex;
 }
