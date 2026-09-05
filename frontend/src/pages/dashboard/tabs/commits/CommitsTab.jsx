@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { repoApi, severityColor, timeAgo } from "@/lib/api";
+import Pagination from "@/components/common/Pagination";
 
 export default function CommitsTab({
   onInspectCommit,
@@ -30,7 +31,23 @@ export default function CommitsTab({
   const [selectedRepoId, setSelectedRepoId] = useState(initialRepoId || null);
   const [commits, setCommits] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(() => {
+    try {
+      const saved = localStorage.getItem("threatlens_commits_limit");
+      return saved ? Math.min(100, Math.max(5, parseInt(saved, 10) || 10)) : 10;
+    } catch {
+      return 10;
+    }
+  });
+
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    setPage(1);
+    try {
+      localStorage.setItem("threatlens_commits_limit", String(newLimit));
+    } catch {}
+  };
+
   const [loading, setLoading] = useState(true);
   const [loadingCommits, setLoadingCommits] = useState(false);
 
@@ -109,6 +126,20 @@ export default function CommitsTab({
       severityFilter === "all" || (c.summary?.risk_level || "").toLowerCase() === severityFilter.toLowerCase();
     return matchesSearch && matchesSeverity;
   });
+
+  // Dynamic total commits calculation:
+  // Uses selectedRepo.commit_count if available, or derives from loaded pages.
+  const repoCommitCount = selectedRepo?.commit_count || 0;
+  const totalCommits =
+    repoCommitCount > 0
+      ? commits.length < limit && (page - 1) * limit + commits.length < repoCommitCount
+        ? (page - 1) * limit + commits.length
+        : Math.max(repoCommitCount, (page - 1) * limit + commits.length)
+      : commits.length < limit
+      ? (page - 1) * limit + commits.length
+      : Math.max(page * limit + 1, (page - 1) * limit + commits.length);
+
+  const totalPages = Math.max(1, Math.ceil(totalCommits / limit));
 
   // Computed KPIs
   const totalFindings = commits.reduce((s, c) => s + (c.summary?.findings || 0), 0);
@@ -198,8 +229,8 @@ export default function CommitsTab({
         <div className="bg-[#10151a] border border-[#263544] rounded-xl p-4.5 relative overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
           <div className="absolute left-0 top-0 bottom-0 w-[3.5px] bg-[#6EA8DA]" />
           <div className="text-[10.5px] uppercase tracking-wider text-[#8a99ad] font-semibold">Analyzed Commits</div>
-          <div className="text-xl font-bold mt-1.5 text-white">{loadingCommits ? "…" : commits.length}</div>
-          <div className="text-[11px] text-[#8a99ad] mt-1">page {page} · {limit}/page</div>
+          <div className="text-xl font-bold mt-1.5 text-white">{loadingCommits ? "…" : totalCommits}</div>
+          <div className="text-[11px] text-[#8a99ad] mt-1">page {page} of {totalPages} · {limit}/page</div>
         </div>
 
         <div className="bg-[#10151a] border border-[#263544] rounded-xl p-4.5 relative overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
@@ -446,23 +477,19 @@ export default function CommitsTab({
           })}
 
           {/* Pagination */}
-          <div className="flex items-center justify-center gap-3 pt-4">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="px-4 py-2 rounded-lg border border-[#2b3947] bg-[#10151a] text-[#d8e2e8] font-mono text-xs hover:border-white/[0.2] disabled:opacity-30 transition-all"
-            >
-              ← Previous
-            </button>
-            <span className="font-mono text-xs text-[#8a99ad]">Page {page}</span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={commits.length < limit}
-              className="px-4 py-2 rounded-lg border border-[#2b3947] bg-[#10151a] text-[#d8e2e8] font-mono text-xs hover:border-white/[0.2] disabled:opacity-30 transition-all"
-            >
-              Next →
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={(newPage) => {
+              setPage(newPage);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            limit={limit}
+            onLimitChange={handleLimitChange}
+            totalItems={totalCommits}
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+            itemLabel="commits"
+          />
         </div>
       )}
     </div>
