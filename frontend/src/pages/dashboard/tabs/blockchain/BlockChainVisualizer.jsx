@@ -17,6 +17,7 @@ import {
   Clock,
   Layers,
   FileCode,
+  RefreshCw,
 } from "lucide-react";
 import { timeAgo, formatBytes, severityColor } from "@/lib/api";
 
@@ -216,6 +217,11 @@ export default function BlockChainVisualizer({
                       : `border-[#1e2a3e] ${cfg.border} hover:shadow-[0_10px_30px_rgba(0,0,0,0.7)] hover:-translate-y-1`
                   }`}
                 >
+                  {/* Active Laser Scan Sweep Line */}
+                  {isScanning && (
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#38bdf8] to-transparent animate-pulse rounded-t-2xl shadow-[0_0_15px_#38bdf8]" />
+                  )}
+
                   {/* Top Bar: Index & Type Badge */}
                   <div className="flex items-center justify-between pb-3 border-b border-[#182335]">
                     <div className="flex items-center gap-2">
@@ -238,6 +244,11 @@ export default function BlockChainVisualizer({
                         <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
                           <ShieldAlert className="w-3 h-3" />
                           <span>{isTargetTamper ? "Corrupted" : "Broken Link"}</span>
+                        </span>
+                      ) : isScanning ? (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 animate-pulse">
+                          <RefreshCw className="w-3 h-3 animate-spin text-[#38bdf8]" />
+                          <span>Auditing...</span>
                         </span>
                       ) : (
                         <span
