@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import SelectInput, { ItemProps, IndicatorProps } from 'ink-select-input';
+import { useTheme } from '../state/themeContext.js';
 
 export interface SelectOption<V extends string = string> {
   label: string;
@@ -10,9 +11,10 @@ export interface SelectOption<V extends string = string> {
 }
 
 const CustomIndicator: React.FC<IndicatorProps> = ({ isSelected }) => {
+  const { theme } = useTheme();
   return (
     <Box width={3}>
-      <Text color={isSelected ? '#818CF8' : 'gray'} bold={isSelected}>
+      <Text color={isSelected ? theme.highlight : 'gray'} bold={isSelected}>
         {isSelected ? '❯' : ' '}
       </Text>
     </Box>
@@ -20,6 +22,7 @@ const CustomIndicator: React.FC<IndicatorProps> = ({ isSelected }) => {
 };
 
 const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
+  const { theme } = useTheme();
   // Check if label contains description in parentheses e.g. "Option Title (Description)"
   const match = label.match(/^(.*?)\s*\((.*?)\)$/);
 
@@ -31,10 +34,10 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
       <Box flexDirection="column">
         <Box flexDirection="row" flexWrap="nowrap">
           {isSelected && (
-            <Text color="#818CF8" bold>{'▌ '}</Text>
+            <Text color={theme.highlight} bold>{'▌ '}</Text>
           )}
           <Text
-            color={isSelected ? 'white' : 'white'}
+            color={isSelected ? theme.text : theme.text}
             bold={isSelected}
             dimColor={!isSelected}
           >
@@ -43,7 +46,7 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
         </Box>
         {isSelected ? (
           <Box paddingLeft={isSelected ? 4 : 0}>
-            <Text dimColor color="gray">
+            <Text dimColor color={theme.textMuted}>
               {desc}
             </Text>
           </Box>
@@ -59,10 +62,10 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
       <Box flexDirection="column">
         <Box flexDirection="row" flexWrap="nowrap">
           {isSelected && (
-            <Text color="#818CF8" bold>{'▌ '}</Text>
+            <Text color={theme.highlight} bold>{'▌ '}</Text>
           )}
           <Text
-            color={isSelected ? 'white' : 'white'}
+            color={isSelected ? theme.text : theme.text}
             bold={isSelected}
             dimColor={!isSelected}
           >
@@ -71,7 +74,7 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
         </Box>
         {isSelected && desc ? (
           <Box paddingLeft={4}>
-            <Text dimColor color="gray">
+            <Text dimColor color={theme.textMuted}>
               {desc}
             </Text>
           </Box>
@@ -83,10 +86,10 @@ const CustomItem: React.FC<ItemProps> = ({ isSelected, label }) => {
   return (
     <Box flexDirection="row" alignItems="center">
       {isSelected && (
-        <Text color="#818CF8" bold>{'▌ '}</Text>
+        <Text color={theme.highlight} bold>{'▌ '}</Text>
       )}
       <Text
-        color={isSelected ? 'white' : 'white'}
+        color={isSelected ? theme.text : theme.text}
         bold={isSelected}
         dimColor={!isSelected}
       >

@@ -13,6 +13,7 @@ export type Screen =
   | { type: 'rateLimit' }
   | { type: 'proxy' }
   | { type: 'chatHistory' }
+  | { type: 'theme' }
   | { type: 'agentChat'; chatId?: number; initialPrompt?: string };
 
 export type ScreenType = Screen['type'];

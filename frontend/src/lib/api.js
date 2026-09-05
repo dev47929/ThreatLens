@@ -3,7 +3,21 @@ const API_BASE_URL =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) ||
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
   "";
+export const CLI_API_BASE_URL =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_CLI_API_URL) ||
+  "http://localhost:1234";
 const SECTEST_BASE = "http://localhost:8765";
+
+export function normalizeRouteType(type) {
+  if (!type) return "ddos";
+  const t = String(type).toLowerCase().replace(/_/g, "-");
+  if (t.includes("ddos")) return "ddos";
+  if (t.includes("sql")) return "sqli";
+  if (t.includes("xss")) return "xss";
+  if (t.includes("proxy")) return "origin-proxy";
+  if (t.includes("data") || t.includes("burn")) return "data-burning";
+  return t;
+}
 
 export function parseJwt(token) {
   try {
@@ -279,6 +293,10 @@ export const repoApi = {
     return await res.json();
   },
 
+  async getRepositories(token) {
+    return this.getRepos(token);
+  },
+
   async getCommits(token, repoId, page = 1, limit = 10) {
     const url = `${API_BASE_URL}/repo/${repoId}/commits?page=${page}&limit=${limit}`;
     const res = await fetch(url, {
@@ -323,11 +341,24 @@ export const secTestApi = {
 
 // ── Live Attacks & Penetration Testing API ──
 export const attackApi = {
-  // Check backend pulse
+  // Check backend pulse (checks CLI backend first, then auth pulse)
   async checkHealth() {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
+      const timeout = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`${CLI_API_BASE_URL}/pulse`, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return Boolean(data?.connect || data?.status === "Live" || res.ok);
+      }
+    } catch {
+      // ignore and try auth pulse
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
       const res = await fetch(`${API_BASE_URL}/tc-auth/config/pulse`, { signal: controller.signal });
       clearTimeout(timeout);
       return res.ok;
@@ -336,99 +367,164 @@ export const attackApi = {
     }
   },
 
-  // Get live running attacks
-  async getLiveAttacks() {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
-      const res = await fetch(`${API_BASE_URL}/api/attacks/live`, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (!res.ok) {
-        // Optional fallback endpoint
-        const fallback = await fetch(`${API_BASE_URL}/attack`, { signal: controller.signal });
-        if (fallback.ok) return await fallback.json();
-        return null;
-      }
-      return await res.json();
-    } catch {
-      return null;
-    }
-  },
-
-  // Get specific attack status
-  async getAttackStatus(attackType, attackId) {
-    try {
-      const endpoint = attackType
-        ? `${API_BASE_URL}/attack/${attackType}/${attackId}`
-        : `${API_BASE_URL}/attack/${attackId}`;
-      const res = await fetch(endpoint);
-      if (!res.ok) throw new Error(`Attack status returned ${res.status}`);
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  // Stop a running attack
-  async stopAttack(attackType, attackId) {
-    try {
-      const endpoint = attackType
-        ? `${API_BASE_URL}/attack/${attackType}/${attackId}/stop`
-        : `${API_BASE_URL}/attack/${attackId}/stop`;
-      const res = await fetch(endpoint, { method: "POST" });
-      return await res.json();
-    } catch (err) {
-      throw err;
-    }
-  },
-
-  // Get attacks history list from backend
-  async getAttacks({ attack_type = null, page = 1, limit = 100 } = {}, token = null) {
+  // Get attacks list (uses stream = false as per usage guide)
+  async getAttacks({ attack_type = null, stream = false, page = 1, limit = 100 } = {}, token = null) {
     const params = new URLSearchParams();
-    if (attack_type) params.append("attack_type", attack_type);
-    if (page) params.append("page", page);
-    if (limit) params.append("limit", limit);
+    if (attack_type && attack_type !== "all") params.append("attack_type", attack_type);
+    params.append("stream", String(stream)); // Explicitly sets stream=false for list
+    if (page) params.append("page", String(page));
+    if (limit) params.append("limit", String(limit));
 
+    // 1. Primary: Direct local cli-backend (port 1234, in-memory store)
+    try {
+      const res = await fetch(`${CLI_API_BASE_URL}/attack?${params.toString()}`, {
+        headers: { Accept: "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+      }
+    } catch {
+      // ignore and try remote API fallback
+    }
+
+    // 2. Secondary fallback (API_BASE_URL / Vite proxy)
     const authToken =
       token ||
       (typeof window !== "undefined" ? localStorage.getItem("threatlens_token") : null);
 
     const headers = {
-      "Content-Type": "application/json",
+      Accept: "application/json",
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };
 
-    // 1. Primary endpoint (Vite proxy / API_BASE_URL)
     try {
-      const res = await fetch(`${API_BASE_URL}/attack?${params.toString()}`, {
-        headers,
-      });
+      const res = await fetch(`${API_BASE_URL}/attack?${params.toString()}`, { headers });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          return data;
-        }
-      }
-    } catch {
-      // ignore and try local fallback
-    }
-
-    // 2. Direct local cli-backend fallback (port 1234)
-    try {
-      const res = await fetch(`http://localhost:1234/attack?${params.toString()}`, {
-        headers,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          return data;
-        }
+        if (Array.isArray(data)) return data;
       }
     } catch {
       // ignore
     }
 
     return [];
+  },
+
+  // Alias for getting live attacks list (uses stream = false)
+  async getLiveAttacks(filter = {}) {
+    return this.getAttacks({ ...filter, stream: false });
+  },
+
+  // Subscribe to live SSE attack stream (stream = true, polling = false)
+  subscribeLiveAttacks({ attack_type = null, onAttackCreated, onError, onOpen } = {}) {
+    const params = new URLSearchParams({
+      stream: "true",
+      polling: "false",
+    });
+    if (attack_type && attack_type !== "all") {
+      params.append("attack_type", attack_type);
+    }
+
+    const url = `${CLI_API_BASE_URL}/attack?${params.toString()}`;
+    const eventSource = new EventSource(url);
+
+    if (onOpen) {
+      eventSource.onopen = (e) => onOpen(e);
+    }
+
+    eventSource.addEventListener("attack_created", (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (onAttackCreated) onAttackCreated(data);
+      } catch (err) {
+        console.error("Failed to parse attack_created event data:", err);
+      }
+    });
+
+    eventSource.onerror = (err) => {
+      if (onError) onError(err);
+    };
+
+    return eventSource;
+  },
+
+  // Get specific attack status
+  async getAttackStatus(attackType, attackId) {
+    const route = normalizeRouteType(attackType);
+    try {
+      const res = await fetch(`${CLI_API_BASE_URL}/attack/${route}/${attackId}`);
+      if (res.ok) return await res.json();
+    } catch {
+      // ignore
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/attack/${route}/${attackId}`);
+      if (res.ok) return await res.json();
+    } catch {
+      // ignore
+    }
+    return null;
+  },
+
+  // Stop a running attack
+  async stopAttack(attackType, attackId) {
+    const route = normalizeRouteType(attackType);
+    try {
+      const res = await fetch(`${CLI_API_BASE_URL}/attack/${route}/${attackId}/stop`, {
+        method: "POST",
+      });
+      if (res.ok) return await res.json();
+    } catch {
+      // ignore
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/attack/${route}/${attackId}/stop`, {
+        method: "POST",
+      });
+      if (res.ok) return await res.json();
+    } catch {
+      // ignore
+    }
+    return null;
+  },
+
+  // Stream telemetry for a specific attack (SSE)
+  subscribeAttackTelemetry(attackType, attackId, onMessage, onError) {
+    const route = normalizeRouteType(attackType);
+    const url = `${CLI_API_BASE_URL}/attack/${route}/${attackId}/stream`;
+    const eventSource = new EventSource(url);
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (onMessage) onMessage(data);
+      } catch {
+        // ignore
+      }
+    };
+    if (onError) eventSource.onerror = onError;
+    return eventSource;
+  },
+
+  // Launch real attack against local backend
+  async launchAttack(attackType, payload) {
+    const route = normalizeRouteType(attackType);
+    const res = await fetch(`${CLI_API_BASE_URL}/attack/${route}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(
+        err?.detail
+          ? typeof err.detail === "string"
+            ? err.detail
+            : JSON.stringify(err.detail)
+          : `Launch failed with status ${res.status}`
+      );
+    }
+    return await res.json();
   },
 
   // Log new attack execution
@@ -598,6 +694,11 @@ export const chainApi = {
     }
     return await res.json();
   },
+
+  // Destroy a chain (alias for deleteChain)
+  async destroyChain(token, chainId) {
+    return this.deleteChain(token, chainId);
+  },
 };
 
 // ── Ethereum Trust Anchor API ──
@@ -672,6 +773,7 @@ export function timeAgo(dateStr) {
   if (days < 7) return `${days}d ago`;
   return date.toLocaleDateString();
 }
+export const formatTimeAgo = timeAgo;
 
 export function severityColor(severity) {
   switch (severity?.toLowerCase()) {
