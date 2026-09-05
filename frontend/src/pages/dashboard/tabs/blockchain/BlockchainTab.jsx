@@ -29,7 +29,7 @@ import {
   isMetaMaskAvailable,
 } from "@/lib/ethereum";
 
-import BlockchainVisualizer from "./BlockchainVisualizer";
+import BlockchainVisualizer from "./BlockChainVisualizer";
 import AppendBlockModal from "./AppendBlockModal";
 import CreateChainModal from "./CreateChainModal";
 import DeleteChainModal from "./DeleteChainModal";
