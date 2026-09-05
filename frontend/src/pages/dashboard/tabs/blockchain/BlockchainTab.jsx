@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { chainApi, ethApi, formatBytes, timeAgo } from "@/lib/api";
+import BlockChainVisualizer from "./BlockChainVisualizer";
 
 export default function BlockchainTab({
   onInspectBlock,
@@ -40,6 +41,9 @@ export default function BlockchainTab({
   const [copiedHash, setCopiedHash] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState("verified"); // 'verified' | 'verifying' | 'tampered'
   const [ethAnchor, setEthAnchor] = useState(null);
+  const [selectedBlock, setSelectedBlock] = useState(null);
+  const [scanningIndex, setScanningIndex] = useState(null);
+  const [tamperedBlockIndex, setTamperedBlockIndex] = useState(null);
 
   // 1. Fetch available chains for the user
   const fetchChains = useCallback(async () => {
@@ -369,97 +373,17 @@ export default function BlockchainTab({
         </div>
       </div>
 
-      {/* ── VISUALIZER PLACEHOLDER (Step 4 will provide the full block chain ribbon) ── */}
-      <div className="p-6 rounded-2xl bg-[#090d16] border border-[#1a2538] shadow-2xl relative overflow-hidden">
-        <div className="flex items-center justify-between pb-3 border-b border-[#182335]">
-          <div className="flex items-center gap-2 text-xs font-mono text-[#8a99ad]">
-            <Blocks className="w-4 h-4 text-[#38bdf8]" />
-            <span>Block Chain Sequence ({blocks.length} blocks loaded)</span>
-          </div>
-          <div className="text-[11px] font-mono text-[#8a99ad]">
-            Tip: Click any block to view cryptographic proof and payload
-          </div>
-        </div>
-
-        {loadingBlocks ? (
-          <div className="py-16 flex flex-col items-center justify-center text-center space-y-3">
-            <RefreshCw className="w-6 h-6 text-[#38bdf8] animate-spin" />
-            <div className="text-xs font-mono text-[#8a99ad]">
-              Loading cryptographic blocks from backend ledger...
-            </div>
-          </div>
-        ) : blocks.length === 0 ? (
-          <div className="py-16 text-center space-y-2">
-            <ShieldAlert className="w-8 h-8 text-[#8a99ad] mx-auto opacity-50" />
-            <div className="text-sm font-mono text-white">No blocks found in this chain</div>
-            <div className="text-xs font-mono text-[#8a99ad]">
-              Create a new checkpoint to initialize the chain.
-            </div>
-          </div>
-        ) : (
-          <div className="py-6 flex items-center gap-4 overflow-x-auto pb-4 pt-2">
-            {blocks.map((block, idx) => {
-              const isGenesis = block.type === "genesis";
-              const isRepo = block.type === "repo";
-              const isCommit = block.type === "commit_analysis";
-              const isAttack = ["ddos", "data_burning", "injection"].includes(block.type);
-              const isUsage = block.type === "usage";
-
-              return (
-                <div
-                  key={block.index}
-                  onClick={() => onInspectBlock?.(block)}
-                  className="shrink-0 w-64 p-4 rounded-xl bg-[#0e1624] border border-[#1e2c42] hover:border-[#38bdf8]/60 hover:shadow-[0_0_25px_rgba(56,189,248,0.15)] transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between pb-2 border-b border-[#182335]">
-                    <span className="font-mono text-xs font-bold text-white">
-                      Block #{block.index}
-                    </span>
-                    <span
-                      className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full ${
-                        isGenesis
-                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                          : isRepo
-                          ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                          : isCommit
-                          ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                          : isAttack
-                          ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                          : isUsage
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          : "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                      }`}
-                    >
-                      {block.type}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 space-y-1.5 font-mono text-[10px]">
-                    <div className="flex items-center justify-between text-[#8a99ad]">
-                      <span>Hash:</span>
-                      <span className="text-[#38bdf8] font-bold">
-                        {block.current.slice(0, 10)}...
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[#8a99ad]">
-                      <span>Prev:</span>
-                      <span className="text-[#8a99ad]">
-                        {block.prev ? `${block.prev.slice(0, 8)}...` : "00000000"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[#8a99ad] pt-1 border-t border-[#182335]">
-                      <span>Timestamp:</span>
-                      <span className="text-white">
-                        {timeAgo(block.created_at)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* ── INTERCONNECTED SEQUENTIAL BLOCK-CHAIN RIBBON ── */}
+      <BlockChainVisualizer
+        blocks={blocks}
+        activeBlockIndex={selectedBlock?.index}
+        onSelectBlock={(block) => {
+          setSelectedBlock(block);
+          onInspectBlock?.(block);
+        }}
+        verificationScanningIndex={scanningIndex}
+        tamperedBlockIndex={tamperedBlockIndex}
+      />
     </div>
   );
 }
