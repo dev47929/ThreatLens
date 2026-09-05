@@ -29,6 +29,7 @@ import BlockChainVisualizer from "./BlockChainVisualizer";
 import BlockDetailModal from "./BlockDetailModal";
 import BuildChainModal from "./BuildChainModal";
 import TamperSimulatorModal from "./TamperSimulatorModal";
+import EthereumAnchorCard from "./EthereumAnchorCard";
 
 export default function BlockchainTab({
   onInspectBlock,
@@ -409,6 +410,15 @@ export default function BlockchainTab({
         }}
         verificationScanningIndex={scanningIndex}
         tamperedBlockIndex={tamperedBlockIndex}
+      />
+
+      {/* ── ETHEREUM L1 TRUST ANCHOR CARD ── */}
+      <EthereumAnchorCard
+        chainId={selectedChainId}
+        chainHeight={blocks.length}
+        tipHash={tipHash}
+        anchor={ethAnchor}
+        onAnchorCreated={(newAnchor) => setEthAnchor(newAnchor)}
       />
 
       {/* ── DEEP BLOCK INSPECTOR MODAL ── */}
