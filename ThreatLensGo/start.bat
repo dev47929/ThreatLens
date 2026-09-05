@@ -10,7 +10,7 @@ timeout /t 2 /nobreak >nul
 echo Starting TUI...
 
 cd /d "%~dp0tui"
-npm run dev
+start /wait /max cmd /c "cls && npm run dev"
 
 echo.
 echo TUI stopped. Closing CLI backend...

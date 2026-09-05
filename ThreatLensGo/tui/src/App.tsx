@@ -4,6 +4,7 @@ import Spinner from 'ink-spinner';
 import { BackendProvider, loadSession, clearSession } from './state/backendState.js';
 import { NavigationProvider, useNavigation } from './state/navigation.js';
 import { SecuritySessionProvider } from './state/securitySession.js';
+import { ThemeProvider } from './state/themeContext.js';
 import { backendClient } from './api/backendClient.js';
 import {
   LoginScreen,
@@ -19,6 +20,7 @@ import {
   ProxyScreen,
   ChatHistoryScreen,
   AgentChatScreen,
+  ThemeScreen,
 } from './screens/index.js';
 
 export const ScreenRenderer: React.FC = () => {
@@ -49,6 +51,8 @@ export const ScreenRenderer: React.FC = () => {
       return <ProxyScreen />;
     case 'chatHistory':
       return <ChatHistoryScreen />;
+    case 'theme':
+      return <ThemeScreen />;
     case 'agentChat':
       return <AgentChatScreen chatId={current.chatId} initialPrompt={current.initialPrompt} />;
     default: {
@@ -129,9 +133,11 @@ export const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <BackendProvider>
-      <NavigationProvider initialScreen={{ type: 'login' }}>
-        <AppContent />
-      </NavigationProvider>
+      <ThemeProvider>
+        <NavigationProvider initialScreen={{ type: 'login' }}>
+          <AppContent />
+        </NavigationProvider>
+      </ThemeProvider>
     </BackendProvider>
   );
 };

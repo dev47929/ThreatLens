@@ -9,6 +9,10 @@ import { AnimatedTip } from '../components/AnimatedTip.js';
 import { Select } from '../components/Select.js';
 import { PulsingBox } from '../components/PulsingBox.js';
 
+import { useTheme } from '../state/themeContext.js';
+import { THEMES } from '../theme/themes.js';
+import type { ThemeId } from '../theme/types.js';
+
 type CommandAction =
   | 'agentChat'
   | 'chatHistory'
@@ -21,6 +25,7 @@ type CommandAction =
   | 'rateLimit'
   | 'proxy'
   | 'targetUrl'
+  | 'theme'
   | 'exit';
 
 interface CommandItem {
@@ -34,6 +39,11 @@ const COMMANDS: CommandItem[] = [
     label: '0. 🤖 ThreatLens Agent (Interactive Codebase Intelligence & Auto-Patching)',
     value: 'agentChat',
     shortcut: '0',
+  },
+  {
+    label: 'T. 🎨 Theme Options (Switch theme just like Claude: claude, dark, light, daltonized, etc.)',
+    value: 'theme',
+    shortcut: 't',
   },
   {
     label: 'H. 📜 Chat History (Restore or review previous agent conversations)',
@@ -97,6 +107,7 @@ export const MainMenu: React.FC = () => {
   const { exit } = useApp();
   const { targetUrl } = useSecuritySession();
   const { columns } = useTerminalSize();
+  const { theme, setTheme } = useTheme();
 
   const [inputQuery, setInputQuery] = useState('');
   const [focusMode, setFocusMode] = useState<'menu' | 'input'>('menu');
@@ -109,7 +120,9 @@ export const MainMenu: React.FC = () => {
       exit();
       return;
     }
-    if (item.value === 'agentChat') {
+    if (item.value === 'theme') {
+      push({ type: 'theme' });
+    } else if (item.value === 'agentChat') {
       push({ type: 'agentChat' });
     } else if (item.value === 'chatHistory') {
       push({ type: 'chatHistory' });
@@ -138,6 +151,19 @@ export const MainMenu: React.FC = () => {
     const trimmed = value.trim().toLowerCase();
     if (!trimmed) {
       setFocusMode('menu');
+      return;
+    }
+
+    if (trimmed.startsWith('/theme') || trimmed.startsWith('theme')) {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length > 1) {
+        const reqTheme = parts[1] as ThemeId;
+        if (reqTheme in THEMES) {
+          setTheme(reqTheme);
+          return;
+        }
+      }
+      push({ type: 'theme' });
       return;
     }
 
@@ -182,26 +208,28 @@ export const MainMenu: React.FC = () => {
         // Direct single-key shortcuts when menu is active
         if (input === '0') {
           handleSelect(COMMANDS[0]);
+        } else if (input === 't' || input === 'T') {
+          push({ type: 'theme' });
         } else if (input === 'h' || input === 'H') {
           push({ type: 'chatHistory' });
         } else if (input === '1') {
-          handleSelect(COMMANDS[1]);
-        } else if (input === '2') {
-          handleSelect(COMMANDS[2]);
-        } else if (input === '3') {
           handleSelect(COMMANDS[3]);
-        } else if (input === '4') {
+        } else if (input === '2') {
           handleSelect(COMMANDS[4]);
-        } else if (input === '5') {
+        } else if (input === '3') {
           handleSelect(COMMANDS[5]);
-        } else if (input === '6') {
+        } else if (input === '4') {
           handleSelect(COMMANDS[6]);
-        } else if (input === '7') {
+        } else if (input === '5') {
           handleSelect(COMMANDS[7]);
-        } else if (input === '8') {
+        } else if (input === '6') {
           handleSelect(COMMANDS[8]);
-        } else if (input === '9') {
+        } else if (input === '7') {
           handleSelect(COMMANDS[9]);
+        } else if (input === '8') {
+          handleSelect(COMMANDS[10]);
+        } else if (input === '9') {
+          handleSelect(COMMANDS[11]);
         } else if (input === 'q') {
           exit();
         } else if (input === '/' || input === ':') {
@@ -229,8 +257,8 @@ export const MainMenu: React.FC = () => {
         {/* Command Input Card — PulsingBox is isolated: only IT re-renders on pulse ticks */}
         <PulsingBox
           isActive={focusMode === 'input'}
-          activeColorA="cyan"
-          activeColorB="#60A5FA"
+          activeColorA={theme.accent}
+          activeColorB={theme.secondary}
           inactiveColor="gray"
           borderStyle="round"
           paddingX={2}
@@ -241,7 +269,7 @@ export const MainMenu: React.FC = () => {
           {/* Search/Ask line */}
           <Box flexDirection="row" alignItems="center">
             <Box width={3}>
-              <Text color={focusMode === 'input' ? 'cyan' : 'gray'} bold>
+              <Text color={focusMode === 'input' ? theme.highlight : 'gray'} bold>
                 {focusMode === 'input' ? '›' : '·'}
               </Text>
             </Box>
@@ -256,8 +284,8 @@ export const MainMenu: React.FC = () => {
                 focus={focusMode === 'input'}
                 placeholder={
                   focusMode === 'input'
-                    ? "Type query & press enter (e.g. 'audit /api/search')..."
-                    : "Press Tab or / to type custom agent query, or press 0-9 to select"
+                    ? "Type query, /theme, or press enter (e.g. 'audit /api/search')..."
+                    : "Press Tab or / to type custom agent query, T for theme, or 0-9 to select"
                 }
               />
             </Box>
@@ -265,13 +293,13 @@ export const MainMenu: React.FC = () => {
 
           {/* Engine tags */}
           <Box flexDirection="row" marginTop={1} paddingLeft={3}>
-            <Text color="cyan" bold>Security</Text>
+            <Text color={theme.accent} bold>Security</Text>
             <Text color="gray"> · </Text>
             <Text color="white">ThreatLensGo Engine</Text>
             <Text color="gray"> · </Text>
-            <Text color="#818CF8" bold>by CodeSena</Text>
+            <Text color={theme.secondary} bold>by CodeSena</Text>
             <Text color="gray"> · </Text>
-            <Text dimColor color="gray">
+            <Text dimColor color={theme.textMuted}>
               {targetUrl ? `⬡ ${targetUrl}` : 'OpenAudit Zen'}
             </Text>
           </Box>
@@ -279,14 +307,16 @@ export const MainMenu: React.FC = () => {
 
         {/* Hotkey Pills Bar */}
         <Box flexDirection="row" marginTop={1} justifyContent="center">
-          <Text bold color="yellow">0-9</Text>
-          <Text color="gray"> instant pick · </Text>
-          <Text bold color="white">tab</Text>
-          <Text color="gray"> switch mode · </Text>
-          <Text bold color="white">↑↓/enter</Text>
-          <Text color="gray"> select · </Text>
-          <Text bold color="white">esc</Text>
-          <Text color="gray"> exit</Text>
+          <Text bold color={theme.secondary}>0-9</Text>
+          <Text color={theme.textMuted}> pick · </Text>
+          <Text bold color={theme.highlight}>t</Text>
+          <Text color={theme.textMuted}> theme · </Text>
+          <Text bold color={theme.text}>tab</Text>
+          <Text color={theme.textMuted}> mode · </Text>
+          <Text bold color={theme.text}>↑↓/enter</Text>
+          <Text color={theme.textMuted}> select · </Text>
+          <Text bold color={theme.text}>esc</Text>
+          <Text color={theme.textMuted}> exit</Text>
         </Box>
 
         {/* Select Menu */}
@@ -295,12 +325,12 @@ export const MainMenu: React.FC = () => {
           marginTop={1}
           width={Math.min(width - 4, 88)}
           borderStyle="round"
-          borderColor={focusMode === 'menu' ? '#818CF8' : 'gray'}
+          borderColor={focusMode === 'menu' ? theme.highlight : 'gray'}
           paddingX={1}
         >
           {/* Menu header */}
           <Box paddingX={1} paddingTop={0}>
-            <Text color={focusMode === 'menu' ? '#818CF8' : 'gray'} bold dimColor={focusMode !== 'menu'}>
+            <Text color={focusMode === 'menu' ? theme.highlight : 'gray'} bold dimColor={focusMode !== 'menu'}>
               {focusMode === 'menu' ? '◈ COMMANDS' : '○ COMMANDS'}
             </Text>
           </Box>
@@ -320,13 +350,13 @@ export const MainMenu: React.FC = () => {
       {/* Bottom Statusline */}
       <Box flexDirection="row" justifyContent="space-between" marginTop={1}>
         <Box flexDirection="row">
-          <Text dimColor color="gray">
+          <Text dimColor color={theme.textMuted}>
             ThreatLensGo:main
           </Text>
         </Box>
         <Box flexDirection="row">
-          <Text dimColor color="gray">
-            v0.1.0
+          <Text dimColor color={theme.textMuted}>
+            v0.1.0 · theme:{theme.id}
           </Text>
         </Box>
       </Box>

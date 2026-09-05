@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import { useSecuritySession } from '../state/securitySession.js';
 import { useBackend } from '../state/backendState.js';
+import { useTheme } from '../state/themeContext.js';
 import { StatusDot, StatusType } from './StatusDot.js';
 
 export interface TerminalLayoutProps {
@@ -35,12 +36,15 @@ export const TerminalLayout: React.FC<TerminalLayoutProps> = ({
   statusText = 'READY',
   statusType = 'ready',
   keyHints = '↑↓ navigate · enter select · esc back',
-  accentColor = 'cyan',
+  accentColor,
   children,
 }) => {
   const { columns } = useTerminalSize();
   const { targetUrl } = useSecuritySession();
   const { isOnline } = useBackend();
+  const { theme } = useTheme();
+
+  const effectiveAccent = accentColor || theme.accent;
 
   // NO animation hooks here — StatusDot handles its own re-renders in isolation
   const width = Math.max(60, columns > 2 ? columns - 2 : 78);
@@ -56,21 +60,21 @@ export const TerminalLayout: React.FC<TerminalLayoutProps> = ({
       {/* Top Minimalist Header — fully static, no animation */}
       <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
         <Box flexDirection="row" alignItems="center">
-          <Text bold color="yellow">threatlensgo</Text>
-          <Text color="cyan"> by CodeSena</Text>
-          <Text color="#818CF8"> › </Text>
-          <Text color="white" bold>{'['}</Text>
-          <Text color={accentColor} bold>{breadcrumb.toLowerCase()}</Text>
-          <Text color="white" bold>{']'}</Text>
+          <Text bold color={theme.secondary}>threatlensgo</Text>
+          <Text color={theme.accent}> by CodeSena</Text>
+          <Text color={theme.highlight}> › </Text>
+          <Text color={theme.text} bold>{'['}</Text>
+          <Text color={effectiveAccent} bold>{breadcrumb.toLowerCase()}</Text>
+          <Text color={theme.text} bold>{']'}</Text>
           {!isOnline && (
-            <Text color="red" bold> ⚠ Backend Offline</Text>
+            <Text color={theme.error} bold> ⚠ Backend Offline</Text>
           )}
         </Box>
         <Box flexDirection="row">
           {targetUrl ? (
-            <Text color="gray">{'⬡ '}<Text color="cyan" bold>{targetUrl}</Text></Text>
+            <Text color={theme.textMuted}>{'⬡ '}<Text color={effectiveAccent} bold>{targetUrl}</Text></Text>
           ) : (
-            <Text dimColor color="gray">standalone mode</Text>
+            <Text dimColor color={theme.textMuted}>standalone mode</Text>
           )}
         </Box>
       </Box>
@@ -79,7 +83,7 @@ export const TerminalLayout: React.FC<TerminalLayoutProps> = ({
       <Box
         flexDirection="column"
         borderStyle="round"
-        borderColor={accentColor}
+        borderColor={effectiveAccent}
         paddingX={2}
         paddingY={1}
       >
@@ -87,20 +91,20 @@ export const TerminalLayout: React.FC<TerminalLayoutProps> = ({
         <Box flexDirection="column" marginBottom={1}>
           {step && totalSteps ? (
             <Box flexDirection="row" marginBottom={0} alignItems="center">
-              <Text color="yellow" bold>● STEP {step}/{totalSteps}{'  '}</Text>
-              <Text color="#818CF8" bold>{buildStepBar(step, totalSteps)}</Text>
+              <Text color={theme.secondary} bold>● STEP {step}/{totalSteps}{'  '}</Text>
+              <Text color={theme.highlight} bold>{buildStepBar(step, totalSteps)}</Text>
             </Box>
           ) : null}
 
-          <Text bold color={accentColor}>{title}</Text>
+          <Text bold color={effectiveAccent}>{title}</Text>
           {subtitle ? (
-            <Text color="gray" dimColor>{subtitle}</Text>
+            <Text color={theme.textMuted} dimColor>{subtitle}</Text>
           ) : null}
         </Box>
 
         {/* Divider — static */}
         <Box marginBottom={1}>
-          <Text color={accentColor} dimColor>
+          <Text color={effectiveAccent} dimColor>
             {'╌'.repeat(Math.max(1, dividerLength - 4))}
           </Text>
         </Box>
@@ -116,15 +120,15 @@ export const TerminalLayout: React.FC<TerminalLayoutProps> = ({
             <StatusDot statusType={statusType} statusText={statusText} />
           </Box>
           <Box flexDirection="row">
-            <Text dimColor color="gray">{keyHints}</Text>
+            <Text dimColor color={theme.textMuted}>{keyHints}</Text>
           </Box>
         </Box>
       </Box>
 
       {/* Bottom Statusline — static */}
       <Box flexDirection="row" justifyContent="space-between" marginTop={1}>
-        <Text dimColor color="gray">ThreatLensGo:main</Text>
-        <Text dimColor color="gray">v0.1.0</Text>
+        <Text dimColor color={theme.textMuted}>ThreatLensGo:main</Text>
+        <Text dimColor color={theme.textMuted}>v0.1.0 · theme:{theme.id}</Text>
       </Box>
     </Box>
   );

@@ -41,7 +41,8 @@ const ATTACK_FILTER_OPTIONS = [
 
 function normalizeBackendAttack(item, userEmail) {
   const attackType = (item.attack_type || item.type || "attack").toLowerCase();
-  const targetObj = item.request?.target || {};
+  const configObj = item.config || {};
+  const targetObj = configObj.target || item.request?.target || {};
   const targetStr = targetObj.base_url
     ? `${targetObj.base_url}${targetObj.endpoint || ""}`
     : item.target || "Target Endpoint";
@@ -125,6 +126,15 @@ function normalizeBackendAttack(item, userEmail) {
       })
     : "Recently";
 
+  const payloadStr =
+    item.payload ||
+    (configObj.attack
+      ? JSON.stringify(configObj.attack)
+      : item.request?.request?.body
+      ? JSON.stringify(item.request.request.body)
+      : targetObj.query_params
+      ? JSON.stringify(targetObj.query_params)
+      : `${targetObj.method || "GET"} ${targetObj.endpoint || "/"}`);
   const attempted =
     item.status?.progress?.attempted_requests ??
     item.status?.progress?.planned_requests ??
@@ -251,7 +261,7 @@ export default function AttackHistoryTab({
           ? localStorage.getItem("threatlens_token")
           : null);
 
-      const backendData = await attackApi.getAttacks({}, authToken);
+      const backendData = await attackApi.getAttacks({ stream: false }, authToken);
       if (Array.isArray(backendData)) {
         const normalized = backendData.map((item) =>
           normalizeBackendAttack(item, currentUserEmail)
