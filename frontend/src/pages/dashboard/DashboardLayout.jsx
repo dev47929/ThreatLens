@@ -30,6 +30,7 @@ import {
   Clock,
   LayoutDashboard,
   BookOpen,
+  Blocks,
 } from "lucide-react";
 
 // Domain-Based Tab Views
@@ -38,6 +39,7 @@ import CommitsTab from "./tabs/commits/CommitsTab";
 import LiveFindingsTab from "./tabs/security/LiveFindingsTab";
 import LiveAttacksTab from "./tabs/security/LiveAttacksTab";
 import SecretDetectionTab from "./tabs/security/SecretDetectionTab";
+import BlockchainTab from "./tabs/blockchain/BlockchainTab";
 import AccountsTab from "./tabs/admin/AccountsTab";
 import SystemConfigTab from "./tabs/admin/SystemConfigTab";
 import SessionsTab from "./tabs/admin/SessionsTab";
@@ -67,6 +69,7 @@ const NAV_CATEGORIES = [
       { id: "findings", label: "Live findings", icon: ShieldAlert },
       { id: "live-attacks", label: "Live attacks", icon: Flame },
       { id: "secrets", label: "Secret detection", icon: KeyRound },
+      { id: "blockchain", label: "Blockchain", icon: Blocks },
     ],
   },
   {
@@ -135,6 +138,8 @@ export default function DashboardLayout() {
   const breadcrumbItem =
     activeTopTab === "tokens"
       ? "Token usage"
+      : activeNav === "blockchain"
+      ? "Blockchain & Integrity"
       : activeItemObj?.label || "Dashboard";
 
   // Close tokens dropdown when clicking outside
@@ -961,6 +966,8 @@ export default function DashboardLayout() {
           {activeNav === "live-attacks" && <LiveAttacksTab />}
 
           {activeNav === "secrets" && <SecretDetectionTab />}
+
+          {activeNav === "blockchain" && <BlockchainTab />}
 
           {activeNav === "accounts" && <AccountsTab />}
 
