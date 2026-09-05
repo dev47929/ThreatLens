@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { chainApi, ethApi, formatBytes, timeAgo } from "@/lib/api";
 import BlockChainVisualizer from "./BlockChainVisualizer";
 import BlockDetailModal from "./BlockDetailModal";
+import BuildChainModal from "./BuildChainModal";
 
 export default function BlockchainTab({
   onInspectBlock,
@@ -44,6 +45,7 @@ export default function BlockchainTab({
   const [ethAnchor, setEthAnchor] = useState(null);
   const [selectedBlock, setSelectedBlock] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isBuildOpen, setIsBuildOpen] = useState(false);
   const [scanningIndex, setScanningIndex] = useState(null);
   const [tamperedBlockIndex, setTamperedBlockIndex] = useState(null);
 
@@ -246,7 +248,7 @@ export default function BlockchainTab({
           </button>
 
           <button
-            onClick={onOpenNewCheckpoint || (() => toast.info("Checkpoint Builder opens in Step 7"))}
+            onClick={() => setIsBuildOpen(true)}
             className="px-4 py-2 rounded-lg bg-[#2962FF] hover:bg-[#1e4ed8] text-white font-mono text-xs font-bold shadow-[0_0_15px_rgba(41,98,255,0.35)] flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -417,6 +419,17 @@ export default function BlockchainTab({
           if (found) setSelectedBlock(found);
         }}
         totalBlocks={blocks.length}
+      />
+
+      {/* ── NEW CHECKPOINT BUILDER MODAL ── */}
+      <BuildChainModal
+        isOpen={isBuildOpen}
+        onClose={() => setIsBuildOpen(false)}
+        token={token}
+        onChainCreated={(newChainId) => {
+          setSelectedChainId(newChainId);
+          fetchChains();
+        }}
       />
     </div>
   );
