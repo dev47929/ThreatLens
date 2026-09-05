@@ -76,16 +76,6 @@ const NAV_CATEGORIES = [
       { id: "prompts", label: "Prompt history", icon: Sparkles },
     ],
   },
-  {
-    id: "admin",
-    title: "Admin",
-    adminOnly: true,
-    items: [
-      { id: "accounts", label: "Accounts", icon: Users },
-      { id: "config", label: "System config", icon: Settings },
-      { id: "sessions", label: "Sessions", icon: Clock },
-    ],
-  },
 ];
 
 // ── Loading Skeleton ──
@@ -391,7 +381,7 @@ export default function DashboardLayout() {
 
             {/* Navigation Links */}
             <nav className="flex-1 overflow-y-auto px-3 py-2.5 space-y-1 font-sans select-none no-scrollbar">
-              {NAV_CATEGORIES.filter((cat) => !cat.adminOnly || isAdmin).map((cat, catIdx, arr) => {
+              {NAV_CATEGORIES.map((cat, catIdx, arr) => {
                 const isCollapsed = collapsedCategories[cat.id];
 
                 return (
