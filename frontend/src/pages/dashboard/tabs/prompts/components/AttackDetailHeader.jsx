@@ -2,13 +2,7 @@ import React, { useState } from "react";
 import {
   Copy,
   Check,
-  ShieldCheck,
-  ShieldAlert,
-  AlertTriangle,
-  Zap,
-  ExternalLink,
   Target,
-  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,7 +11,7 @@ export default function AttackDetailHeader({ attack }) {
 
   if (!attack) return null;
 
-  const { identity, target, execution } = attack;
+  const { identity, target } = attack;
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(identity.attackId || identity.id);
@@ -26,59 +20,6 @@ export default function AttackDetailHeader({ attack }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getStatusBadge = (status) => {
-    const s = status?.toLowerCase();
-    if (s === "completed") {
-      return {
-        label: "Completed",
-        icon: ShieldCheck,
-        badgeClass: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-        dotClass: "bg-emerald-400",
-      };
-    }
-    if (s === "blocked") {
-      return {
-        label: "Blocked / Intercepted",
-        icon: ShieldCheck,
-        badgeClass: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-        dotClass: "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]",
-      };
-    }
-    if (s === "detected") {
-      return {
-        label: "Detected / Sanitized",
-        icon: AlertTriangle,
-        badgeClass: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-        dotClass: "bg-amber-400",
-      };
-    }
-    if (s === "mitigated") {
-      return {
-        label: "Mitigated (Rate Limited)",
-        icon: Zap,
-        badgeClass: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
-        dotClass: "bg-cyan-400",
-      };
-    }
-    if (s === "running") {
-      return {
-        label: "Live Attack Running",
-        icon: Flame,
-        badgeClass: "bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse",
-        dotClass: "bg-rose-500 animate-ping",
-      };
-    }
-    return {
-      label: s || "Recorded",
-      icon: ShieldAlert,
-      badgeClass: "bg-slate-500/15 text-slate-300 border-slate-500/30",
-      dotClass: "bg-slate-400",
-    };
-  };
-
-  const statusMeta = getStatusBadge(execution.status);
-  const StatusIcon = statusMeta.icon;
-
   return (
     <div className="bg-[#101724]/90 backdrop-blur-md border border-[#1e2d42] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
         {/* Subtle glowing corner accent */}
@@ -86,27 +27,6 @@ export default function AttackDetailHeader({ attack }) {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Attack Type Badge */}
-              <span className="px-2.5 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-bold font-mono tracking-wide uppercase">
-                {identity.type}
-              </span>
-
-              {/* Severity Badge */}
-              <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-bold uppercase tracking-wider font-mono">
-                {identity.severity}
-              </span>
-
-              {/* Status Outcome Badge */}
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${statusMeta.badgeClass}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`} />
-                <StatusIcon className="w-3.5 h-3.5" />
-                <span>{statusMeta.label}</span>
-              </span>
-            </div>
-
             {/* Attack Title */}
             <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-white">
               {identity.name}

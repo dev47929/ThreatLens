@@ -51,18 +51,22 @@ export default function AttackDetailView({ attack, onBack }) {
         {/* 1. Attack Identity Header Banner */}
         <AttackDetailHeader attack={normalizedAttack} />
 
-        {/* 2. The 4 Standard Telemetry Visualizations (2x2 Grid) */}
+        {/* 2. Attack Traffic & Request Rate (2-Column Grid) */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {/* Graph 1: Attack Traffic — Request Progress */}
           <AttackTrafficChart attack={normalizedAttack} />
 
           {/* Graph 2: Request Rate — Attack Intensity */}
           <RequestRateChart attack={normalizedAttack} />
+        </div>
 
-          {/* Graph 3: Latency Profile — Response Performance */}
+        {/* 3. Full-width Latency Profile (Minimal Area Graph on Left, Plain English Details on Right) */}
+        <div className="w-full">
           <LatencyProfileChart attack={normalizedAttack} />
+        </div>
 
-          {/* Graph 4: Request Health — Success & Request State */}
+        {/* 4. Full-width Request Health (Dual-Blue Stacked Bar Graph on Left, Plain English Details on Right) */}
+        <div className="w-full">
           <RequestHealthChart attack={normalizedAttack} />
         </div>
 
