@@ -3,6 +3,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import React from "react";
 import { Route, Switch } from "wouter";
 
+import { Toaster } from "sonner";
+
 // Common Components
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 
@@ -42,6 +44,7 @@ export default function App() {
       <ThemeProvider defaultTheme="dark">
         <AuthProvider>
           <Router />
+          <Toaster position="top-right" theme="dark" richColors />
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

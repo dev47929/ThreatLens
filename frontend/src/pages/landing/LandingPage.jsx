@@ -3,7 +3,7 @@
  * Design & Layout: High-density intelligence dashboard aesthetic, calibrated
  * trace rails, frosted attestation surfaces, and concise operational language.
  */
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   Activity,
   ArrowRight,
@@ -26,8 +26,10 @@ import {
   Github,
   Key,
   Layers,
+  LayoutDashboard,
   Link2,
   Lock,
+  LogOut,
   Menu,
   Monitor,
   Network,
@@ -42,6 +44,7 @@ import {
   Star,
   Terminal,
   TriangleAlert,
+  User,
   X,
   Zap,
 } from "lucide-react";
@@ -50,6 +53,7 @@ import { Link } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThreatLensLogo } from "@/components/common/ThreatLensLogo";
 import FloatingLines from "@/components/common/FloatingLines";
+import ProfileModal from "@/components/drawers/ProfileModal";
 import { PLANS } from "@/pages/dashboard/tabs/billing/TokenUsageTab";
 
 const heroImage = "/terminal_cli_preview.jpg";
@@ -91,6 +95,9 @@ function Brand({ compact = false }) {
 function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const { user, logout } = useAuth();
 
   useEffect(() => {
@@ -100,7 +107,22 @@ function Navbar() {
     return () => window.removeEventListener("scroll", update);
   }, []);
 
-  const closeMenu = () => setOpen(false);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const closeMenu = () => {
+    setOpen(false);
+    setProfileDropdownOpen(false);
+  };
+
+  const initials = (user?.name || user?.handle || "TL").slice(0, 2).toUpperCase();
 
   return (
     <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
@@ -121,27 +143,124 @@ function Navbar() {
           </a>
 
           {user ? (
-            <div className="user-profile-badge">
-              <div className="user-avatar">
-                {user.name ? user.name[0].toUpperCase() : user.handle ? user.handle[0].toUpperCase() : "U"}
-              </div>
-              <div className="user-info">
-                <span className="user-name">{user.name || user.handle}</span>
-                <span className="user-role">@{user.handle || "user"}</span>
-              </div>
+            <div className="relative flex items-center" ref={profileMenuRef}>
+              {/* User Profile Avatar matching Dashboard */}
               <button
                 type="button"
-                onClick={logout}
-                className="button button-ghost ml-2 px-2.5 py-1 text-xs text-red-400 hover:text-red-300 border-red-500/20"
-                title="Sign out"
+                onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                className="flex items-center rounded-full ring-1 ring-white/10 hover:ring-[#6EA8DA]/60 focus:outline-none focus:ring-2 focus:ring-[#6EA8DA]/60 transition-all cursor-pointer overflow-hidden p-0.5"
+                title={user.name || user.handle || "Account Profile"}
+                aria-label="Account Settings"
+                aria-expanded={profileDropdownOpen}
               >
-                Sign Out
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name || user.handle || "Avatar"}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shadow-sm"
+                    style={{
+                      background: "linear-gradient(135deg, #2C6CB0, #6EA8DA)",
+                    }}
+                  >
+                    {initials}
+                  </div>
+                )}
               </button>
+
+              {/* Profile Dropdown Menu */}
+              <AnimatePresence>
+                {profileDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2.5 w-60 rounded-xl bg-[#0c101a] border border-[#222f46] shadow-[0_12px_40px_rgba(0,0,0,0.85)] p-2 backdrop-blur-xl z-[9999]"
+                  >
+                    {/* User Card Header */}
+                    <div className="px-3 py-2.5 rounded-lg bg-[#141a29] border border-white/[0.04] mb-1.5 flex items-center gap-2.5">
+                      {user.avatar_url ? (
+                        <img
+                          src={user.avatar_url}
+                          alt=""
+                          className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10 shrink-0"
+                        />
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shadow-sm shrink-0"
+                          style={{
+                            background: "linear-gradient(135deg, #2C6CB0, #6EA8DA)",
+                          }}
+                        >
+                          {initials}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-white truncate">
+                          {user.name || user.handle || "User"}
+                        </p>
+                        <p className="text-[10px] text-[#6EA8DA] font-mono truncate">
+                          @{user.handle || "user"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Navigation Items */}
+                    <div className="space-y-1">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#c4d1e0] hover:text-white hover:bg-white/[0.06] transition-colors"
+                      >
+                        <LayoutDashboard className="w-3.5 h-3.5 text-[#6EA8DA]" />
+                        <span>Open Dashboard</span>
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          setIsProfileOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-[#c4d1e0] hover:text-white hover:bg-white/[0.06] transition-colors text-left cursor-pointer"
+                      >
+                        <User className="w-3.5 h-3.5 text-[#6EA8DA]" />
+                        <span>Profile Settings</span>
+                      </button>
+                    </div>
+
+                    <div className="my-1.5 border-t border-white/[0.06]" />
+
+                    {/* Sign Out Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link className="button button-primary nav-cta" href="/signup">
-                Sign Up <ArrowRight size={15} />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/signin"
+                className="text-[#8a99ad] hover:text-[#EAF2F8] font-medium text-[14px] px-3 py-1.5 rounded-lg hover:bg-white/[0.04] transition-all"
+              >
+                Sign In
+              </Link>
+              <Link className="button button-primary nav-cta flex items-center gap-1.5" href="/signup">
+                <span>Sign Up</span> <ArrowRight size={14} />
               </Link>
             </div>
           )}
@@ -155,16 +274,75 @@ function Navbar() {
         <Link onClick={closeMenu} href="/dashboard">Dashboard</Link>
         <a onClick={closeMenu} href="#pricing">Pricing</a>
         {user ? (
-          <button onClick={() => { logout(); closeMenu(); }} className="button button-ghost text-red-400">
-            Sign Out (@{user.handle})
-          </button>
+          <div className="flex flex-col gap-2 pt-2 border-t border-white/[0.08]">
+            <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-[#12141c] border border-white/[0.06]">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt=""
+                  className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10"
+                />
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                  style={{
+                    background: "linear-gradient(135deg, #2C6CB0, #6EA8DA)",
+                  }}
+                >
+                  {initials}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-white truncate">{user.name || user.handle}</p>
+                <p className="text-[10px] text-[#6EA8DA] font-mono truncate">@{user.handle || "user"}</p>
+              </div>
+            </div>
+
+            <Link
+              onClick={closeMenu}
+              href="/dashboard"
+              className="button button-primary text-xs flex items-center justify-center gap-1.5"
+            >
+              <LayoutDashboard size={14} />
+              <span>Open Dashboard</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                setIsProfileOpen(true);
+              }}
+              className="button button-ghost text-xs flex items-center justify-center gap-1.5"
+            >
+              <User size={14} />
+              <span>Profile Settings</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                logout();
+                closeMenu();
+              }}
+              className="button button-ghost text-xs text-rose-400 hover:text-rose-300 border-rose-500/20 flex items-center justify-center gap-1.5"
+            >
+              <LogOut size={14} />
+              <span>Sign Out</span>
+            </button>
+          </div>
         ) : (
           <div className="flex flex-col gap-2 pt-2">
             <Link onClick={closeMenu} href="/signin" className="button button-ghost text-center">Sign In</Link>
-            <Link onClick={closeMenu} href="/signup" className="button button-primary text-center justify-center">Sign Up <ArrowRight size={16} /></Link>
+            <Link onClick={closeMenu} href="/signup" className="button button-primary text-center justify-center flex items-center gap-1.5">
+              <span>Sign Up</span> <ArrowRight size={16} />
+            </Link>
           </div>
         )}
       </div>
+
+      {/* Account Settings Modal matching Dashboard */}
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </header>
   );
 }
@@ -293,6 +471,7 @@ function HeroTypewriter() {
 }
 
 function Hero() {
+  const { user } = useAuth();
   return (
     <section className="hero" id="top">
       <div className="hero-art" style={{ backgroundImage: `url(${heroImage})` }} />
@@ -318,7 +497,9 @@ function Hero() {
           </motion.div>
           <motion.p variants={appear}>AI-powered security testing that detects threats, finds real vulnerabilities, and turns every security result into verifiable proof.</motion.p>
           <motion.div variants={appear} className="hero-actions">
-            <Link className="button button-primary button-large" href="/signup">Get Started <ArrowRight size={18} /></Link>
+            <Link className="button button-primary button-large flex items-center gap-2" href={user ? "/dashboard" : "/signup"}>
+              <span>{user ? "Open Dashboard" : "Get Started"}</span> <ArrowRight size={18} />
+            </Link>
             <a className="button button-ghost button-large" href="#terminal">Explore Terminal CLI <ChevronRight size={17} /></a>
           </motion.div>
           <motion.div variants={appear} className="hero-capabilities">
@@ -843,6 +1024,7 @@ function PricingSection() {
 }
 
 function BlockchainTrust() {
+  const { user } = useAuth();
   return (
     <section className="section trust-section" id="trust">
       <div className="trust-art" /><div className="trust-grid" />
@@ -850,7 +1032,9 @@ function BlockchainTrust() {
         <FadeIn className="trust-copy">
           <h2>Proof of security that can&apos;t be altered</h2>
           <p>Security claims without proof are just words. ThreatLens cryptographically hashes every finding, exploit test, and report — then anchors that proof permanently to Polygon.</p>
-          <Link className="button button-primary" href="/signup">Start Securing Your Code <ArrowRight size={15} /></Link>
+          <Link className="button button-primary flex items-center gap-2" href={user ? "/dashboard" : "/signup"}>
+            <span>{user ? "Open Dashboard" : "Start Securing Your Code"}</span> <ArrowRight size={15} />
+          </Link>
         </FadeIn>
         <FadeIn className="verification-stage" delay={0.15}>
           <div className="verification-path">
@@ -870,13 +1054,16 @@ function BlockchainTrust() {
 }
 
 function FinalCTA() {
+  const { user } = useAuth();
   return (
     <section className="final-cta">
       <div className="container final-cta-content">
         <div className="cta-seal"><Shield size={20} /></div>
         <h2>Ready to secure your code?</h2>
         <p>Connect your repository and get your first AI-verified security report in minutes.</p>
-        <Link className="button button-primary button-large" href="/signup">Get Started Free <ArrowRight size={17} /></Link>
+        <Link className="button button-primary button-large flex items-center gap-2" href={user ? "/dashboard" : "/signup"}>
+          <span>{user ? "Open Dashboard" : "Get Started Free"}</span> <ArrowRight size={17} />
+        </Link>
         <span className="cta-footnote"><ShieldCheck size={14} /> Free tier available · No credit card required · Instant setup</span>
       </div>
     </section>
