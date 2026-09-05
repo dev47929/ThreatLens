@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import GradientWaves from "@/animations/GradientWaves";
+import { attackApi } from "@/lib/api";
+import AttackDetailView from "./AttackDetailView";
 
 const INITIAL_ATTACKS = [
   {
@@ -123,7 +125,11 @@ const INITIAL_ATTACKS = [
   },
 ];
 
-export default function AttackHistoryTab({ user }) {
+export default function AttackHistoryTab({
+  user,
+  selectedAttack: externalSelectedAttack,
+  onSelectAttack: externalOnSelectAttack,
+}) {
   const [attacks, setAttacks] = useState(INITIAL_ATTACKS);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -141,7 +147,30 @@ export default function AttackHistoryTab({ user }) {
   const [newAttackVector, setNewAttackVector] = useState("");
   const [newAttackPayload, setNewAttackPayload] = useState("");
   const [newAttackResponse, setNewAttackResponse] = useState("");
-  const [selectedAttack, setSelectedAttack] = useState(null);
+  const [localSelectedAttack, setLocalSelectedAttack] = useState(null);
+
+  const selectedAttack =
+    externalSelectedAttack !== undefined ? externalSelectedAttack : localSelectedAttack;
+  const handleSelectAttack = externalOnSelectAttack || setLocalSelectedAttack;
+
+  // Load live backend attacks if available
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadBackendAttacks() {
+      try {
+        const backendData = await attackApi.getAttacks({}, user?.token);
+        if (isMounted && Array.isArray(backendData) && backendData.length > 0) {
+          setAttacks(backendData);
+        }
+      } catch {
+        // Fallback to INITIAL_ATTACKS
+      }
+    }
+    loadBackendAttacks();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const currentUserEmail = user?.email || "tejalmishra1@gmail.com";
 
@@ -394,7 +423,7 @@ export default function AttackHistoryTab({ user }) {
                     return (
                       <tr
                         key={a.id}
-                        onClick={() => setSelectedAttack(a)}
+                        onClick={() => handleSelectAttack(a)}
                         className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
                       >
                         {/* Attack Name & Category/Vector */}
@@ -480,13 +509,13 @@ export default function AttackHistoryTab({ user }) {
 
                               <button
                                 onClick={() => {
-                                  setSelectedAttack(a);
+                                  handleSelectAttack(a);
                                   setActiveMenuId(null);
                                 }}
                                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-[#d8e2e8] hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
                               >
                                 <Edit3 className="w-3.5 h-3.5 text-[#8a99ad]" />
-                                <span>Inspect run logs</span>
+                                <span>Inspect attack details</span>
                               </button>
 
                               <button
@@ -686,108 +715,13 @@ export default function AttackHistoryTab({ user }) {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 2: ATTACK DETAIL MODAL                                              */}
-      {/* ========================================================================= */}
+      {/* RENDER DEDICATED FULL ATTACK DETAIL VIEW WHEN ATTACK IS SELECTED */}
       {selectedAttack && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none">
-          <div className="w-full max-w-2xl bg-[#0e1622] border border-[#23344b] rounded-2xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-start justify-between pb-3 border-b border-[#1e2a3b]">
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-base font-bold text-white">{selectedAttack.name}</h2>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getSeverityBadgeClass(
-                      selectedAttack.severity
-                    )}`}
-                  >
-                    {selectedAttack.severity}
-                  </span>
-                </div>
-                <p className="text-xs text-rose-300 mt-1 flex items-center gap-2">
-                  <span className="font-mono">{selectedAttack.category}</span>
-                  <span>·</span>
-                  <span className="text-[#8a99ad]">{selectedAttack.vector}</span>
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedAttack(null)}
-                className="p-1.5 text-[#8a99ad] hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3.5">
-              {/* Stats overview */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#080d14] border border-[#1e2a3b] rounded-xl p-3">
-                  <div className="text-[10px] text-[#8a99ad] uppercase font-semibold">Target System</div>
-                  <div className="text-xs font-bold text-white mt-1 truncate">{selectedAttack.target}</div>
-                </div>
-
-                <div className="bg-[#080d14] border border-[#1e2a3b] rounded-xl p-3">
-                  <div className="text-[10px] text-[#8a99ad] uppercase font-semibold">Guardrail Result</div>
-                  <div className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>{selectedAttack.status}</span>
-                  </div>
-                </div>
-
-                <div className="bg-[#080d14] border border-[#1e2a3b] rounded-xl p-3">
-                  <div className="text-[10px] text-[#8a99ad] uppercase font-semibold">Execution Latency</div>
-                  <div className="text-xs font-mono font-bold text-[#38bdf8] mt-1">{selectedAttack.duration}</div>
-                </div>
-              </div>
-
-              {/* Injected Payload */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold text-[#8a99ad]">
-                  <span>Adversarial Prompt Payload</span>
-                  <button
-                    onClick={() => handleCopyText(selectedAttack.payload, "Payload")}
-                    className="text-[#38bdf8] hover:underline flex items-center gap-1 font-mono text-[11px] cursor-pointer"
-                  >
-                    <Copy className="w-3 h-3" />
-                    <span>Copy</span>
-                  </button>
-                </div>
-                <div className="p-3.5 rounded-xl bg-[#080d14] border border-rose-900/30 text-xs font-mono text-rose-300 leading-relaxed max-h-36 overflow-y-auto">
-                  {selectedAttack.payload}
-                </div>
-              </div>
-
-              {/* Guardrail Response Log */}
-              <div className="space-y-1.5">
-                <div className="text-xs font-semibold text-[#8a99ad]">Defense Interception Trace</div>
-                <div className="p-3.5 rounded-xl bg-[#080d14] border border-[#202e40] text-xs font-mono text-emerald-400 leading-relaxed">
-                  {selectedAttack.responseSummary}
-                </div>
-              </div>
-
-              <div className="text-[11px] text-[#8a99ad] flex items-center justify-between px-1">
-                <span>Executed: {selectedAttack.executedAt}</span>
-                <span>Performed by: {selectedAttack.authorEmail}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-[#1e2a3b]">
-              <button
-                onClick={() => handleCopyText(selectedAttack.payload, "Attack payload")}
-                className="px-4 py-2 rounded-lg bg-[#141d28] border border-[#25364c] text-xs font-medium text-white hover:bg-[#1a2533] transition-colors cursor-pointer flex items-center gap-2"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy Payload</span>
-              </button>
-
-              <button
-                onClick={() => setSelectedAttack(null)}
-                className="px-4.5 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold text-xs shadow-[0_0_15px_rgba(225,29,72,0.35)] transition-all cursor-pointer"
-              >
-                Close Trace
-              </button>
-            </div>
-          </div>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#080d1a]">
+          <AttackDetailView
+            attack={selectedAttack}
+            onBack={() => handleSelectAttack(null)}
+          />
         </div>
       )}
     </div>

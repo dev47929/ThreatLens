@@ -107,6 +107,7 @@ export default function DashboardLayout() {
   });
   const [clockStr, setClockStr] = useState("--:--:--");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedAttack, setSelectedAttack] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isTokensOpen, setIsTokensOpen] = useState(false);
@@ -167,6 +168,7 @@ export default function DashboardLayout() {
   }, []);
 
   const handleNavClick = (id) => {
+    setSelectedAttack(null);
     if (id === "chatbot" || id === "threatlensgo") {
       setActiveNav("prompts");
     } else if (id === "cli") {
@@ -471,6 +473,7 @@ export default function DashboardLayout() {
             <button
               onClick={() => {
                 setActiveTopTab("dashboard");
+                setSelectedAttack(null);
                 if (activeCategoryObj?.items[0]?.id) {
                   setActiveNav(activeCategoryObj.items[0].id);
                 }
@@ -480,9 +483,25 @@ export default function DashboardLayout() {
               {breadcrumbCategory}
             </button>
             <ChevronRight className="w-3.5 h-3.5 text-[#71717a] shrink-0" strokeWidth={1.75} />
-            <span className="bg-[#1c1c20] text-[#f4f4f5] px-2.5 py-0.5 rounded-md text-[13px] font-medium tracking-normal whitespace-nowrap border border-white/[0.04]">
-              {breadcrumbItem}
-            </span>
+
+            {activeNav === "attack-history" && selectedAttack ? (
+              <>
+                <button
+                  onClick={() => setSelectedAttack(null)}
+                  className="text-[#9ca3af] font-medium hover:text-white transition-colors cursor-pointer tracking-normal"
+                >
+                  Attack history
+                </button>
+                <ChevronRight className="w-3.5 h-3.5 text-[#71717a] shrink-0" strokeWidth={1.75} />
+                <span className="bg-[#1c1c20] text-[#f4f4f5] px-2.5 py-0.5 rounded-md text-[13px] font-medium tracking-normal whitespace-nowrap border border-white/[0.04]">
+                  Attack details
+                </span>
+              </>
+            ) : (
+              <span className="bg-[#1c1c20] text-[#f4f4f5] px-2.5 py-0.5 rounded-md text-[13px] font-medium tracking-normal whitespace-nowrap border border-white/[0.04]">
+                {breadcrumbItem}
+              </span>
+            )}
           </div>
 
           {/* Right Side: Notifications, Avatar, Tokens Button */}
@@ -572,7 +591,11 @@ export default function DashboardLayout() {
           ) : activeNav === "prompts" || activeNav === "threatlensgo" ? (
             <PromptHistoryTab user={user} />
           ) : activeNav === "attack-history" ? (
-            <AttackHistoryTab user={user} />
+            <AttackHistoryTab
+              user={user}
+              selectedAttack={selectedAttack}
+              onSelectAttack={setSelectedAttack}
+            />
           ) : (
           /* Main Content */
           <main className="p-8 lg:p-10 pb-20 space-y-7 max-w-[1600px] w-full">
