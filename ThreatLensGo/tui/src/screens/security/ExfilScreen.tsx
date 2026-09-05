@@ -16,16 +16,17 @@ type ExfilVector =
 type ScanDepth = 'Surface scan' | 'Deep scan';
 
 function parseTargetUrl(raw: string): { base_url: string; endpoint: string } {
+  const fallback = raw && raw.trim() !== '' ? raw : 'http://localhost:8001';
   try {
-    const u = new URL(raw.startsWith('http') ? raw : `http://${raw}`);
+    const u = new URL(fallback.startsWith('http') ? fallback : `http://${fallback}`);
     return {
       base_url: `${u.protocol}//${u.host}`,
-      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/',
+      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/health',
     };
   } catch {
     return {
-      base_url: raw,
-      endpoint: '/',
+      base_url: 'http://localhost:8001',
+      endpoint: '/health',
     };
   }
 }
@@ -99,8 +100,8 @@ export const ExfilScreen: React.FC = () => {
       body: null,
     },
     attack: {
-      duration: isDeep ? 30 : 15,
-      requests: isDeep ? 50 : 25,
+      duration: isDeep ? 20 : 10,
+      requests: isDeep ? 40 : 20,
       concurrency: isDeep ? 10 : 5,
       delay: 0.1,
       timeout: 5,
@@ -119,20 +120,33 @@ export const ExfilScreen: React.FC = () => {
       accentColor="yellow"
       statusText={isAttacking ? 'DATA-BURNING RUNNING' : `STEP ${step} OF 3`}
       statusType={isAttacking ? 'warning' : 'ready'}
-      keyHints={isAttacking ? 's / esc halt attack' : `↑↓ navigate · space toggle · enter confirm · esc ${step === 1 ? 'exit' : 'back'}`}
+      keyHints={
+        isAttacking
+          ? 's / esc halt attack'
+          : step === 1
+          ? 'space toggle · enter confirm · esc exit'
+          : `↑↓ navigate · enter select · esc back`
+      }
     >
       {!isAttacking ? (
         <>
+          {/* Target Host banner */}
+          <Box flexDirection="column" marginY={1} paddingLeft={1}>
+            <Text color="gray">
+              Target Endpoint: <Text bold color="cyan">{base_url}{endpoint}</Text>
+            </Text>
+          </Box>
+
           {/* Step 1: Vectors MultiSelect */}
           {step === 1 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Select Exfiltration & Leakage Vectors:
+                1. Select Exfiltration & Leakage Vectors:
               </Text>
               <Box marginTop={1}>
                 <MultiSelect<ExfilVector>
                   items={[
-                    { label: 'API response leakage (PII, tokens, and keys in JSON/XML payloads)', value: 'API response leakage' },
+                    { label: 'API response leakage (PII, tokens, and keys in JSON payloads)', value: 'API response leakage' },
                     { label: 'Error message leakage (Verbose stack traces & unhandled exceptions)', value: 'Error message leakage' },
                     { label: 'Debug endpoint exposure (/actuator, /debug, /metrics, /env)', value: 'Debug endpoint exposure' },
                     { label: 'Header leakage (Server, X-Powered-By, internal hostname headers)', value: 'Header leakage' },
@@ -150,13 +164,13 @@ export const ExfilScreen: React.FC = () => {
           {step === 2 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Select Scan Depth:
+                2. Select Scan Depth:
               </Text>
               <Box marginTop={1}>
                 <Select
                   items={[
-                    { label: '1. Surface scan (Fast reconnaissance across exposed public endpoints)', value: 'Surface scan' as ScanDepth },
-                    { label: '2. Deep scan (Recursive route discovery & active parameter testing)', value: 'Deep scan' as ScanDepth },
+                    { label: '1. Surface scan (Fast reconnaissance across exposed public endpoints - 10s)', value: 'Surface scan' as ScanDepth },
+                    { label: '2. Deep scan (Recursive route discovery & active parameter testing - 20s)', value: 'Deep scan' as ScanDepth },
                   ]}
                   onSelect={handleDepthSelect}
                   isFocused={isInteractive}
@@ -169,20 +183,20 @@ export const ExfilScreen: React.FC = () => {
           {step === 3 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Review Configuration Summary:
+                3. Review Configuration Summary:
               </Text>
               <Box flexDirection="column" marginY={1} paddingLeft={2}>
                 <Text color="gray">
-                  • Target Base URL: <Text color="cyan" bold>{base_url}</Text>
-                </Text>
-                <Text color="gray">
-                  • Endpoint: <Text color="cyan" bold>{endpoint}</Text>
+                  • Target URL: <Text color="cyan" bold>{base_url}{endpoint}</Text>
                 </Text>
                 <Text color="gray">
                   • Exfiltration Vectors: <Text color="yellow" bold>{vectors.join(', ')}</Text>
                 </Text>
                 <Text color="gray">
                   • Scan Depth: <Text color="yellow" bold>{depth}</Text>
+                </Text>
+                <Text color="gray">
+                  • Concurrency: <Text color="white">{dataBurningConfig.attack.concurrency} workers</Text>
                 </Text>
               </Box>
               <Box marginTop={1}>

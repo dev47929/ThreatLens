@@ -8,16 +8,17 @@ import { AttackRunner } from '../components/AttackRunner.js';
 import type { AttackStatus } from '../api/types.js';
 
 function parseTargetUrl(raw: string): { base_url: string; endpoint: string } {
+  const fallback = raw && raw.trim() !== '' ? raw : 'http://localhost:8001/health';
   try {
-    const u = new URL(raw.startsWith('http') ? raw : `http://${raw}`);
+    const u = new URL(fallback.startsWith('http') ? fallback : `http://${fallback}`);
     return {
       base_url: `${u.protocol}//${u.host}`,
-      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/api/v1/resource',
+      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/health',
     };
   } catch {
     return {
-      base_url: raw || 'http://localhost:8000',
-      endpoint: '/api/v1/resource',
+      base_url: 'http://localhost:8001',
+      endpoint: '/health',
     };
   }
 }
@@ -27,7 +28,7 @@ export const RateLimitScreen: React.FC = () => {
   const { targetUrl } = useSecuritySession();
 
   const [step, setStep] = useState<'config' | 'running' | 'done'>('config');
-  const [urlInput, setUrlInput] = useState(targetUrl || 'http://localhost:8000/api/v1/resource');
+  const [urlInput, setUrlInput] = useState(targetUrl || 'http://localhost:8001/health');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [attackResult, setAttackResult] = useState<AttackStatus | null>(null);
 
@@ -50,10 +51,10 @@ export const RateLimitScreen: React.FC = () => {
     },
     attack: {
       duration: 5,
-      requests: 50,
+      requests: 30,
       concurrency: 5, // Light intensity = 5 concurrent workers
-      delay: 0.1,
-      timeout: 1,
+      delay: 0.05,
+      timeout: 2,
       retries: 0,
       on_failure: 'continue',
     },
@@ -94,6 +95,12 @@ export const RateLimitScreen: React.FC = () => {
     { isActive: isInteractive && step !== 'running' }
   );
 
+  const totalAttempted = attackResult?.progress?.attempted_requests ?? attackResult?.requests?.successful ?? 30;
+  const successful = attackResult?.requests?.successful ?? 0;
+  const rateLimited429 = attackResult?.status_codes?.['429'] ?? 0;
+  const failed = attackResult?.requests?.failed ?? 0;
+  const avgLatency = attackResult?.performance?.average_latency_ms ?? 0;
+
   return (
     <TerminalLayout
       title="Rate Limiting Assessment"
@@ -133,17 +140,17 @@ export const RateLimitScreen: React.FC = () => {
                 }}
                 onSubmit={handleStart}
                 focus={isInteractive}
-                placeholder="http://localhost:8000/api/v1/resource"
+                placeholder="http://localhost:8001/health"
               />
             </Box>
           </Box>
 
           <Box flexDirection="column" marginY={1} paddingLeft={2}>
             <Text color="gray">
-              • Engine: <Text color="white" bold>DDoS Light Intensity (5 concurrent workers)</Text>
+              • Engine: <Text color="white" bold>DDoS Rapid Burst (5 concurrent workers)</Text>
             </Text>
             <Text color="gray">
-              • Burst Volume: <Text color="white">50 requests over 5 seconds</Text>
+              • Burst Volume: <Text color="white">30 requests over 5 seconds</Text>
             </Text>
             <Text color="gray">
               • Objective: <Text color="cyan">Trigger & verify HTTP 429 (Too Many Requests) throttling</Text>
@@ -193,27 +200,30 @@ export const RateLimitScreen: React.FC = () => {
                   • Target: <Text color="cyan">{urlInput}</Text>
                 </Text>
                 <Text color="gray">
-                  • Total Requests Sent: <Text color="white" bold>{attackResult.metrics?.requests_sent ?? 50}</Text>
+                  • Total Requests Attempted: <Text color="white" bold>{totalAttempted}</Text>
                 </Text>
                 <Text color="gray">
-                  • Successful Responses: <Text color="green" bold>{attackResult.metrics?.successful_requests ?? 0}</Text>
+                  • Successful Responses: <Text color="green" bold>{successful}</Text>
                 </Text>
                 <Text color="gray">
-                  • Rate-Limited / 429 Responses: <Text color="yellow" bold>{attackResult.metrics?.failed_requests ?? 0}</Text>
+                  • Rate-Limited (429): <Text color="yellow" bold>{rateLimited429}</Text>
                 </Text>
                 <Text color="gray">
-                  • Average Latency: <Text color="white">{(attackResult.metrics?.avg_latency_ms ?? 0).toFixed(1)} ms</Text>
+                  • Other Failed/Errors: <Text color={failed > 0 ? 'red' : 'gray'} bold>{failed}</Text>
+                </Text>
+                <Text color="gray">
+                  • Average Latency: <Text color="white">{avgLatency.toFixed(1)} ms</Text>
                 </Text>
               </Box>
 
               <Box marginTop={1} paddingLeft={2}>
-                {(attackResult.metrics?.failed_requests ?? 0) > 0 ? (
+                {rateLimited429 > 0 ? (
                   <Text color="green" bold>
-                    🛡 Rate Limit Enforced: Endpoint throttled excess traffic and triggered protective thresholds.
+                    🛡 Rate Limit Enforced: Endpoint throttled excess traffic and triggered protective 429 thresholds.
                   </Text>
                 ) : (
                   <Text color="yellow">
-                    ⚠ Warning: No 429 throttling observed at 5 concurrent bursts. Consider reviewing rate limit policy.
+                    ⚠ Notice: No 429 throttling observed at 5 concurrent bursts. Check endpoint throttling configuration.
                   </Text>
                 )}
               </Box>

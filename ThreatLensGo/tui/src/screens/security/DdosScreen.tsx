@@ -18,6 +18,12 @@ const CONCURRENCY_MAP: Record<Intensity, number> = {
   Heavy: 20,
 };
 
+const PATTERN_SETTINGS: Record<AttackPattern, { delay: number; timeout: number }> = {
+  Flood: { delay: 0.05, timeout: 1 },
+  'Slowloris-style': { delay: 0.5, timeout: 5 },
+  'Burst-spike': { delay: 0.1, timeout: 2 },
+};
+
 function parseDurationSeconds(d: string): number {
   const match = d.match(/(\d+)\s*([smh]?)/i);
   if (!match) return 30;
@@ -29,16 +35,17 @@ function parseDurationSeconds(d: string): number {
 }
 
 function parseTargetUrl(raw: string): { base_url: string; endpoint: string } {
+  const fallback = raw && raw.trim() !== '' ? raw : 'http://localhost:8001';
   try {
-    const u = new URL(raw.startsWith('http') ? raw : `http://${raw}`);
+    const u = new URL(fallback.startsWith('http') ? fallback : `http://${fallback}`);
     return {
       base_url: `${u.protocol}//${u.host}`,
-      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/',
+      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/health',
     };
   } catch {
     return {
-      base_url: raw,
-      endpoint: '/',
+      base_url: 'http://localhost:8001',
+      endpoint: '/health',
     };
   }
 }
@@ -121,11 +128,12 @@ export const DdosScreen: React.FC = () => {
     { isActive: isInteractive }
   );
 
-  // Construct DDoSConfig per specification
+  // Construct DDoSConfig matching schema and execute.py
   const { base_url, endpoint } = parseTargetUrl(targetUrl);
   const parsedDuration = parseDurationSeconds(effectiveDuration);
   const concurrencyValue = CONCURRENCY_MAP[intensity] || 10;
-  const requestCount = parsedDuration * concurrencyValue * 2;
+  const { delay: delayValue, timeout: timeoutValue } = PATTERN_SETTINGS[pattern] || PATTERN_SETTINGS.Flood;
+  const requestCount = Math.max(50, parsedDuration * concurrencyValue * 2);
 
   const ddosConfig = {
     target: {
@@ -144,8 +152,8 @@ export const DdosScreen: React.FC = () => {
       duration: parsedDuration,
       requests: requestCount,
       concurrency: concurrencyValue,
-      delay: 0.2,
-      timeout: 1,
+      delay: delayValue,
+      timeout: timeoutValue,
       retries: 0,
       on_failure: 'continue',
     },
@@ -165,16 +173,23 @@ export const DdosScreen: React.FC = () => {
     >
       {!isAttacking ? (
         <>
+          {/* Target Host banner */}
+          <Box flexDirection="column" marginY={1} paddingLeft={1}>
+            <Text color="gray">
+              Target Target: <Text bold color="cyan">{base_url}{endpoint}</Text>
+            </Text>
+          </Box>
+
           {/* Step 1: Pattern */}
           {step === 1 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Select Attack Pattern:
+                1. Select Attack Pattern:
               </Text>
               <Box marginTop={1}>
                 <Select
                   items={[
-                    { label: '1. Flood (High volume continuous HTTP/TCP flood traffic)', value: 'Flood' as AttackPattern },
+                    { label: '1. Flood (High volume continuous HTTP flood traffic, low delay)', value: 'Flood' as AttackPattern },
                     { label: '2. Slowloris-style (Low-and-slow socket and thread pool exhaustion)', value: 'Slowloris-style' as AttackPattern },
                     { label: '3. Burst-spike (Intermittent high-amplitude traffic spikes)', value: 'Burst-spike' as AttackPattern },
                   ]}
@@ -189,7 +204,7 @@ export const DdosScreen: React.FC = () => {
           {step === 2 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Select Traffic Intensity:
+                2. Select Traffic Intensity:
               </Text>
               <Box marginTop={1}>
                 <Select
@@ -209,7 +224,7 @@ export const DdosScreen: React.FC = () => {
           {step === 3 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Select Attack Duration:
+                3. Select Attack Duration:
               </Text>
               {!isEnteringCustom ? (
                 <Box marginTop={1}>
@@ -239,7 +254,7 @@ export const DdosScreen: React.FC = () => {
                         }}
                         onSubmit={handleCustomDurationSubmit}
                         focus={isInteractive}
-                        placeholder="e.g. 45s, 2m, 120s"
+                        placeholder="e.g. 15s, 45s, 2m"
                       />
                     </Box>
                   </Box>
@@ -257,23 +272,23 @@ export const DdosScreen: React.FC = () => {
           {step === 4 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                Review Configuration Summary:
+                4. Review Configuration Summary:
               </Text>
               <Box flexDirection="column" marginY={1} paddingLeft={2}>
                 <Text color="gray">
-                  • Target Base URL: <Text color="cyan" bold>{base_url}</Text>
-                </Text>
-                <Text color="gray">
-                  • Endpoint: <Text color="cyan" bold>{endpoint}</Text>
+                  • Target URL: <Text color="cyan" bold>{base_url}{endpoint}</Text>
                 </Text>
                 <Text color="gray">
                   • Attack Pattern: <Text color="yellow" bold>{pattern}</Text>
                 </Text>
                 <Text color="gray">
-                  • Concurrency Workers: <Text color="yellow" bold>{concurrencyValue} ({intensity})</Text>
+                  • Concurrency: <Text color="yellow" bold>{concurrencyValue} workers ({intensity})</Text>
                 </Text>
                 <Text color="gray">
                   • Duration: <Text color="yellow" bold>{parsedDuration}s</Text>
+                </Text>
+                <Text color="gray">
+                  • Planned Volume: <Text color="white">{requestCount} requests (delay: {delayValue}s)</Text>
                 </Text>
               </Box>
               <Box marginTop={1}>

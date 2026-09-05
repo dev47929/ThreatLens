@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
+import TextInput from 'ink-text-input';
 import { useNavigation } from '../../state/navigation.js';
 import { useSecuritySession } from '../../state/securitySession.js';
 import { MultiSelect, MultiSelectItem } from '../../components/MultiSelect.js';
@@ -10,20 +11,21 @@ import { AttackRunner } from '../../components/AttackRunner.js';
 import { backendClient } from '../../api/backendClient.js';
 import { formatBackendError } from '../../api/errorHandler.js';
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3 | 4;
 type HttpMethod = 'GET' | 'POST';
 
-function parseTargetUrl(raw: string): { base_url: string; endpoint: string } {
+function parseTargetUrl(raw: string, defaultEndpoint: string): { base_url: string; endpoint: string } {
+  const fallback = raw && raw.trim() !== '' ? raw : 'http://localhost:8004';
   try {
-    const u = new URL(raw.startsWith('http') ? raw : `http://${raw}`);
+    const u = new URL(fallback.startsWith('http') ? fallback : `http://${fallback}`);
     return {
       base_url: `${u.protocol}//${u.host}`,
-      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/',
+      endpoint: u.pathname && u.pathname !== '/' ? u.pathname : defaultEndpoint,
     };
   } catch {
     return {
-      base_url: raw,
-      endpoint: '/',
+      base_url: 'http://localhost:8004',
+      endpoint: defaultEndpoint,
     };
   }
 }
@@ -34,6 +36,11 @@ export const XssScreen: React.FC = () => {
 
   const [step, setStep] = useState<Step>(1);
   const [method, setMethod] = useState<HttpMethod>('GET');
+  const [endpointInput, setEndpointInput] = useState<string>('');
+
+  // Parameter Configuration State
+  const [paramInput, setParamInput] = useState<string>('q');
+  const [paramError, setParamError] = useState<string>('');
 
   // Case Management State
   const [casesLoading, setCasesLoading] = useState(false);
@@ -46,6 +53,11 @@ export const XssScreen: React.FC = () => {
   const [isAttacking, setIsAttacking] = useState(false);
 
   const isInteractive = Boolean(process.stdin?.isTTY);
+
+  // Derive initial target & endpoint
+  const defaultEndpoint = method === 'GET' ? '/api/feed/search' : '/api/comments';
+  const parsedTarget = parseTargetUrl(targetUrl, defaultEndpoint);
+  const effectiveEndpoint = endpointInput.trim() || parsedTarget.endpoint;
 
   const loadCases = useCallback(async () => {
     setCasesLoading(true);
@@ -73,25 +85,46 @@ export const XssScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (step === 2) {
+    if (step === 3) {
       loadCases();
     }
   }, [step, loadCases]);
 
+  // Step 1: Method selection
   const handleMethodSelect = (item: { value: HttpMethod }) => {
     setMethod(item.value);
+    if (item.value === 'GET') {
+      setParamInput('q');
+      if (!endpointInput) setEndpointInput('/api/feed/search');
+    } else {
+      setParamInput('comment');
+      if (!endpointInput) setEndpointInput('/api/comments');
+    }
     setStep(2);
   };
 
+  // Step 2: Parameter configuration
+  const handleParamSubmit = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setParamError('Please enter at least one parameter name to inject into.');
+      return;
+    }
+    setParamError('');
+    setParamInput(trimmed);
+    setStep(3);
+  };
+
+  // Step 3: Test cases selection
   const handleCasesSubmit = async (selected: string[]) => {
     if (selected.length === 0) {
-      setCasesError('No test cases selected — select at least one test case.');
+      setCasesError('Select at least one test case.');
       return;
     }
     setCasesError('');
     setSelectedCaseNames(selected);
 
-    // Prepare PATCH payload
+    // Sync enabled state to backend
     const patchPayload = Object.keys(casesDict).map((caseName) => ({
       case: caseName,
       enabled: selected.includes(caseName),
@@ -103,6 +136,15 @@ export const XssScreen: React.FC = () => {
       console.warn('Non-blocking: Failed to update XSS cases on backend:', err.message);
     }
 
+    setStep(4);
+  };
+
+  // Step 4: Final Confirmation
+  const handleConfirmSelect = (item: { value: 'confirm' | 'back' }) => {
+    if (item.value === 'back') {
+      setStep(3);
+      return;
+    }
     setIsAttacking(true);
   };
 
@@ -110,7 +152,11 @@ export const XssScreen: React.FC = () => {
     (_input, key) => {
       if (isAttacking) return;
       if (key.escape) {
-        if (step === 2) {
+        if (step === 4) {
+          setStep(3);
+        } else if (step === 3) {
+          setStep(2);
+        } else if (step === 2) {
           setStep(1);
         } else {
           pop();
@@ -120,18 +166,36 @@ export const XssScreen: React.FC = () => {
     { isActive: isInteractive }
   );
 
-  const { base_url, endpoint } = parseTargetUrl(targetUrl);
+  // Build target body or query parameters
+  const paramList = paramInput
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const queryParams: Record<string, string> = {};
+  const bodyParams: Record<string, string> = {};
+
+  if (method === 'GET') {
+    paramList.forEach((p) => {
+      queryParams[p] = '';
+    });
+  } else {
+    paramList.forEach((p) => {
+      bodyParams[p] = '';
+    });
+  }
+
   const xssConfig = {
     target: {
-      base_url,
-      endpoint,
+      base_url: parsedTarget.base_url,
+      endpoint: effectiveEndpoint,
       method,
-      query_params: {},
+      query_params: queryParams,
       path_params: {},
     },
     request: {
-      headers: {},
-      body: {},
+      headers: method === 'POST' ? { 'Content-Type': 'application/json' } : {},
+      body: method === 'POST' ? bodyParams : {},
       auth: null,
     },
     attack: {
@@ -148,31 +212,46 @@ export const XssScreen: React.FC = () => {
       subtitle="Analyze script reflection boundaries, escaping heuristics, and execution context risks"
       breadcrumb="SECURITY > XSS"
       step={step}
-      totalSteps={2}
+      totalSteps={4}
       accentColor="yellow"
-      statusText={isAttacking ? 'XSS ATTACK RUNNING' : `STEP ${step} OF 2`}
+      statusText={isAttacking ? 'XSS ATTACK RUNNING' : `STEP ${step} OF 4`}
       statusType={isAttacking ? 'warning' : 'ready'}
       keyHints={
         isAttacking
           ? 's / esc halt attack'
-          : step === 2
+          : step === 3
           ? 'space toggle · enter confirm · esc back'
-          : `↑↓ navigate · enter select · esc ${step === 1 ? 'exit' : 'back'}`
+          : `enter select/submit · esc ${step === 1 ? 'exit' : 'back'}`
       }
     >
       {!isAttacking ? (
         <>
-          {/* Step 1: HTTP Method Selection */}
+          {/* Step 1: Target Endpoint & Method Selection */}
           {step === 1 && (
             <Box flexDirection="column" marginY={1}>
+              <Box flexDirection="column" marginBottom={1} paddingLeft={1}>
+                <Text color="gray">
+                  Target Host: <Text bold color="cyan">{parsedTarget.base_url}</Text>
+                </Text>
+                <Text color="gray">
+                  Target Endpoint: <Text bold color="yellow">{effectiveEndpoint}</Text>
+                </Text>
+              </Box>
+
               <Text bold color="white">
                 1. Select Target HTTP Method:
               </Text>
               <Box marginY={1}>
                 <Select
                   items={[
-                    { label: '1. GET (Inspect reflected scripts in query parameters & URL fields)', value: 'GET' as HttpMethod },
-                    { label: '2. POST (Inspect stored & reflected payloads in form bodies)', value: 'POST' as HttpMethod },
+                    {
+                      label: '1. GET — Reflected XSS in Query Parameters (e.g. search / filter params: ?q=...)',
+                      value: 'GET' as HttpMethod,
+                    },
+                    {
+                      label: '2. POST — Stored / Reflected XSS in Request Bodies (e.g. comment / feedback fields)',
+                      value: 'POST' as HttpMethod,
+                    },
                   ]}
                   onSelect={handleMethodSelect}
                   isFocused={isInteractive}
@@ -181,11 +260,61 @@ export const XssScreen: React.FC = () => {
             </Box>
           )}
 
-          {/* Step 2: Test Cases Selection */}
+          {/* Step 2: Parameter Names Input */}
           {step === 2 && (
             <Box flexDirection="column" marginY={1}>
               <Text bold color="white">
-                2. Select XSS Attack Vectors & Test Cases:
+                2. Specify Injection Target Parameter(s):
+              </Text>
+              <Box marginY={1} paddingLeft={1}>
+                <Text color="gray">
+                  {method === 'GET'
+                    ? 'Enter URL query parameter key(s) to probe (e.g. q, search, query):'
+                    : 'Enter JSON body parameter key(s) to probe (e.g. comment, message, text):'}
+                </Text>
+              </Box>
+
+              <Box flexDirection="row" marginY={1}>
+                <Box width={22}>
+                  <Text bold color="yellow">
+                    › Parameters:
+                  </Text>
+                </Box>
+                <Box flexGrow={1}>
+                  <TextInput
+                    value={paramInput}
+                    onChange={(val) => {
+                      setParamInput(val);
+                      if (paramError) setParamError('');
+                    }}
+                    onSubmit={handleParamSubmit}
+                    focus={isInteractive}
+                    placeholder={method === 'GET' ? 'q' : 'comment'}
+                  />
+                </Box>
+              </Box>
+
+              {paramError ? (
+                <Box marginTop={1} paddingLeft={2}>
+                  <Text color="red" bold>
+                    ✗ {paramError}
+                  </Text>
+                </Box>
+              ) : null}
+
+              <Box marginTop={1} paddingLeft={1}>
+                <Text color="gray" dimColor>
+                  Press <Text bold color="white">[Enter]</Text> to confirm parameters and load test cases.
+                </Text>
+              </Box>
+            </Box>
+          )}
+
+          {/* Step 3: Test Cases Selection */}
+          {step === 3 && (
+            <Box flexDirection="column" marginY={1}>
+              <Text bold color="white">
+                3. Select XSS Attack Vectors & Test Cases:
               </Text>
 
               {casesLoading ? (
@@ -204,13 +333,13 @@ export const XssScreen: React.FC = () => {
                     <Select
                       items={[
                         { label: '1. Run with default cases', value: 'default' as const },
-                        { label: '2. Go back to config', value: 'back' as const },
+                        { label: '2. Go back to parameters', value: 'back' as const },
                       ]}
                       onSelect={(item) => {
                         if (item.value === 'default') {
-                          setIsAttacking(true);
+                          setStep(4);
                         } else {
-                          setStep(1);
+                          setStep(2);
                         }
                       }}
                       isFocused={isInteractive}
@@ -232,6 +361,43 @@ export const XssScreen: React.FC = () => {
                   <Text color="yellow">No cases returned by backend.</Text>
                 </Box>
               )}
+            </Box>
+          )}
+
+          {/* Step 4: Review & Confirmation */}
+          {step === 4 && (
+            <Box flexDirection="column" marginY={1}>
+              <Text bold color="white">
+                4. Review XSS Configuration Summary:
+              </Text>
+              <Box flexDirection="column" marginY={1} paddingLeft={2}>
+                <Text color="gray">
+                  • Target URL: <Text color="cyan" bold>{xssConfig.target.base_url}{xssConfig.target.endpoint}</Text>
+                </Text>
+                <Text color="gray">
+                  • Method: <Text color="yellow" bold>{xssConfig.target.method}</Text>
+                </Text>
+                <Text color="gray">
+                  • Injected Parameters: <Text color="yellow" bold>{paramList.join(', ')}</Text>
+                </Text>
+                <Text color="gray">
+                  • Active Test Cases: <Text color="yellow" bold>{selectedCaseNames.length} selected</Text>
+                </Text>
+                <Text color="gray">
+                  • Request Timeout: <Text color="white">5s (delay: 0.1s)</Text>
+                </Text>
+              </Box>
+
+              <Box marginTop={1}>
+                <Select
+                  items={[
+                    { label: 'Confirm & Launch XSS Assessment', value: 'confirm' as const },
+                    { label: 'Back to edit cases', value: 'back' as const },
+                  ]}
+                  onSelect={handleConfirmSelect}
+                  isFocused={isInteractive}
+                />
+              </Box>
             </Box>
           )}
         </>

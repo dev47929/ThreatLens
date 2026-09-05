@@ -10,20 +10,21 @@ import { AttackRunner } from '../components/AttackRunner.js';
 import { backendClient } from '../api/backendClient.js';
 import { formatBackendError } from '../api/errorHandler.js';
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
 type HttpMethod = 'GET' | 'POST';
 
 function parseTargetUrl(raw: string): { base_url: string; endpoint: string } {
+  const fallback = raw && raw.trim() !== '' ? raw : 'http://localhost:8001';
   try {
-    const u = new URL(raw.startsWith('http') ? raw : `http://${raw}`);
+    const u = new URL(fallback.startsWith('http') ? fallback : `http://${fallback}`);
     return {
       base_url: `${u.protocol}//${u.host}`,
-      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/',
+      endpoint: u.pathname && u.pathname !== '' ? u.pathname : '/health',
     };
   } catch {
     return {
-      base_url: raw,
-      endpoint: '/',
+      base_url: 'http://localhost:8001',
+      endpoint: '/health',
     };
   }
 }
@@ -46,6 +47,7 @@ export const ProxyScreen: React.FC = () => {
   const [isAttacking, setIsAttacking] = useState(false);
 
   const isInteractive = Boolean(process.stdin?.isTTY);
+  const { base_url, endpoint } = parseTargetUrl(targetUrl);
 
   const loadCases = useCallback(async () => {
     setCasesLoading(true);
@@ -103,6 +105,14 @@ export const ProxyScreen: React.FC = () => {
       console.warn('Non-blocking: Failed to update Origin Proxy cases on backend:', err.message);
     }
 
+    setStep(3);
+  };
+
+  const handleConfirmSelect = (item: { value: 'confirm' | 'back' }) => {
+    if (item.value === 'back') {
+      setStep(2);
+      return;
+    }
     setIsAttacking(true);
   };
 
@@ -110,7 +120,9 @@ export const ProxyScreen: React.FC = () => {
     (_input, key) => {
       if (isAttacking) return;
       if (key.escape) {
-        if (step === 2) {
+        if (step === 3) {
+          setStep(2);
+        } else if (step === 2) {
           setStep(1);
         } else {
           pop();
@@ -120,7 +132,6 @@ export const ProxyScreen: React.FC = () => {
     { isActive: isInteractive }
   );
 
-  const { base_url, endpoint } = parseTargetUrl(targetUrl);
   const proxyConfig = {
     target: {
       base_url,
@@ -136,7 +147,7 @@ export const ProxyScreen: React.FC = () => {
     },
     attack: {
       requests_per_case: 1,
-      delay: 0.2,
+      delay: 0.1,
       timeout: 5,
       on_failure: 'continue',
     },
@@ -148,9 +159,9 @@ export const ProxyScreen: React.FC = () => {
       subtitle="Evaluate reverse proxy bypasses, IP header spoofing, and CORS preflight heuristics"
       breadcrumb="SECURITY > ORIGIN-PROXY"
       step={step}
-      totalSteps={2}
+      totalSteps={3}
       accentColor="yellow"
-      statusText={isAttacking ? 'PROXY ATTACK RUNNING' : `STEP ${step} OF 2`}
+      statusText={isAttacking ? 'PROXY ATTACK RUNNING' : `STEP ${step} OF 3`}
       statusType={isAttacking ? 'warning' : 'ready'}
       keyHints={
         isAttacking
@@ -162,6 +173,13 @@ export const ProxyScreen: React.FC = () => {
     >
       {!isAttacking ? (
         <>
+          {/* Target Host banner */}
+          <Box flexDirection="column" marginY={1} paddingLeft={1}>
+            <Text color="gray">
+              Target Endpoint: <Text bold color="cyan">{base_url}{endpoint}</Text>
+            </Text>
+          </Box>
+
           {/* Step 1: HTTP Method Selection */}
           {step === 1 && (
             <Box flexDirection="column" marginY={1}>
@@ -171,7 +189,7 @@ export const ProxyScreen: React.FC = () => {
               <Box marginY={1}>
                 <Select
                   items={[
-                    { label: '1. GET (Standard proxy gateway & CORS probe)', value: 'GET' as HttpMethod },
+                    { label: '1. GET (Standard proxy gateway, forwarded IP & CORS probe)', value: 'GET' as HttpMethod },
                     { label: '2. POST (Payload forwarding & header tampering)', value: 'POST' as HttpMethod },
                   ]}
                   onSelect={handleMethodSelect}
@@ -208,7 +226,7 @@ export const ProxyScreen: React.FC = () => {
                       ]}
                       onSelect={(item) => {
                         if (item.value === 'default') {
-                          setIsAttacking(true);
+                          setStep(3);
                         } else {
                           setStep(1);
                         }
@@ -232,6 +250,36 @@ export const ProxyScreen: React.FC = () => {
                   <Text color="yellow">No cases returned by backend.</Text>
                 </Box>
               )}
+            </Box>
+          )}
+
+          {/* Step 3: Review & Confirmation */}
+          {step === 3 && (
+            <Box flexDirection="column" marginY={1}>
+              <Text bold color="white">
+                3. Review Configuration Summary:
+              </Text>
+              <Box flexDirection="column" marginY={1} paddingLeft={2}>
+                <Text color="gray">
+                  • Target URL: <Text color="cyan" bold>{base_url}{endpoint}</Text>
+                </Text>
+                <Text color="gray">
+                  • Method: <Text color="yellow" bold>{method}</Text>
+                </Text>
+                <Text color="gray">
+                  • Active Test Cases: <Text color="yellow" bold>{selectedCaseNames.length} selected</Text>
+                </Text>
+              </Box>
+              <Box marginTop={1}>
+                <Select
+                  items={[
+                    { label: 'Confirm & Launch Origin Proxy Assessment', value: 'confirm' as const },
+                    { label: 'Back to edit cases', value: 'back' as const },
+                  ]}
+                  onSelect={handleConfirmSelect}
+                  isFocused={isInteractive}
+                />
+              </Box>
             </Box>
           )}
         </>

@@ -383,38 +383,63 @@ export const attackApi = {
   },
 
   // Get attacks history list from backend
-  async getAttacks({ attack_type = null, page = 1, limit = 10 } = {}, token = null) {
+  async getAttacks({ attack_type = null, page = 1, limit = 100 } = {}, token = null) {
     const params = new URLSearchParams();
     if (attack_type) params.append("attack_type", attack_type);
     if (page) params.append("page", page);
     if (limit) params.append("limit", limit);
 
+    const authToken =
+      token ||
+      (typeof window !== "undefined" ? localStorage.getItem("threatlens_token") : null);
+
     const headers = {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };
 
+    // 1. Primary endpoint (Vite proxy / API_BASE_URL)
     try {
       const res = await fetch(`${API_BASE_URL}/attack?${params.toString()}`, {
         headers,
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           return data;
         }
       }
     } catch {
-      // Return null on fallback
+      // ignore and try local fallback
     }
-    return null;
+
+    // 2. Direct local cli-backend fallback (port 1234)
+    try {
+      const res = await fetch(`http://localhost:1234/attack?${params.toString()}`, {
+        headers,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          return data;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    return [];
   },
 
   // Log new attack execution
   async postAttack(attackPayload, token = null) {
+    const authToken =
+      token ||
+      (typeof window !== "undefined" ? localStorage.getItem("threatlens_token") : null);
+
     const headers = {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     };
 
     try {
@@ -430,6 +455,27 @@ export const attackApi = {
       // Return null on fallback
     }
     return null;
+  },
+
+  // Delete attack record
+  async deleteAttack(attackId, token = null) {
+    const authToken =
+      token ||
+      (typeof window !== "undefined" ? localStorage.getItem("threatlens_token") : null);
+
+    const headers = {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/attack/${attackId}`, {
+        method: "DELETE",
+        headers,
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   },
 };
 

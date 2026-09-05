@@ -66,6 +66,7 @@ const NAV_CATEGORIES = [
     title: "Security",
     items: [
       { id: "live-attacks", label: "Live attacks", icon: Flame },
+      { id: "attack-history", label: "Attack history", icon: Crosshair },
       { id: "blockchain", label: "Blockchain", icon: Blocks },
     ],
   },
@@ -74,7 +75,6 @@ const NAV_CATEGORIES = [
     title: "Terminal",
     items: [
       { id: "prompts", label: "Prompt history", icon: Sparkles },
-      { id: "attack-history", label: "Attack history", icon: Crosshair },
     ],
   },
   {
@@ -583,6 +583,16 @@ export default function DashboardLayout() {
                 </div>
               )}
             </div>
+
+            {/* Sign Out Button */}
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 rounded-lg bg-[#18181b] hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/30 text-[#d4d4d8] hover:text-rose-400 text-[13px] font-medium transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ml-1"
+              title="Sign out of ThreatLens"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
           </div>
         </header>
 
@@ -599,6 +609,7 @@ export default function DashboardLayout() {
           ) : activeNav === "attack-history" ? (
             <AttackHistoryTab
               user={user}
+              token={token}
               selectedAttack={selectedAttack}
               onSelectAttack={setSelectedAttack}
             />

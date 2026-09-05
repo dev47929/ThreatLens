@@ -13,11 +13,14 @@ import {
   Camera,
   Loader2,
   Lock,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 export default function ProfileModal({ isOpen, onClose }) {
-  const { user, token, updateUser } = useAuth();
+  const { user, token, updateUser, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
   const [name, setName] = useState("");
   const [handle, setHandle] = useState("");
@@ -284,6 +287,31 @@ export default function ProfileModal({ isOpen, onClose }) {
               </button>
             </div>
           </form>
+
+          {/* Sign Out Section */}
+          <div className="pt-4 border-t border-[#253240] flex items-center justify-between">
+            <div>
+              <div className="text-xs font-medium text-white">Session Management</div>
+              <div className="text-[11px] text-[#8a99ad]">End your active session on this device</div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await logout();
+                  toast.success("Successfully signed out");
+                  onClose();
+                  setLocation("/login");
+                } catch (err) {
+                  toast.error("Logout failed: " + (err.message || "Unknown error"));
+                }
+              }}
+              className="px-3.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
