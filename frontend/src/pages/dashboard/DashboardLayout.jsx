@@ -22,7 +22,6 @@ import {
   FolderGit2,
   GitCommit,
   ShieldAlert,
-  KeyRound,
   Flame,
   Terminal,
   Users,
@@ -38,7 +37,6 @@ import RepositoriesTab from "./tabs/repositories/RepositoriesTab";
 import CommitsTab from "./tabs/commits/CommitsTab";
 import LiveFindingsTab from "./tabs/security/LiveFindingsTab";
 import LiveAttacksTab from "./tabs/security/LiveAttacksTab";
-import SecretDetectionTab from "./tabs/security/SecretDetectionTab";
 import BlockchainTab from "./tabs/blockchain/BlockchainTab";
 import AccountsTab from "./tabs/admin/AccountsTab";
 import SystemConfigTab from "./tabs/admin/SystemConfigTab";
@@ -68,7 +66,6 @@ const NAV_CATEGORIES = [
     items: [
       { id: "findings", label: "Live findings", icon: ShieldAlert },
       { id: "live-attacks", label: "Live attacks", icon: Flame },
-      { id: "secrets", label: "Secret detection", icon: KeyRound },
       { id: "blockchain", label: "Blockchain", icon: Blocks },
     ],
   },
@@ -964,8 +961,6 @@ export default function DashboardLayout() {
           {activeNav === "findings" && <LiveFindingsTab onInspectFinding={handleOpenDetail} />}
 
           {activeNav === "live-attacks" && <LiveAttacksTab />}
-
-          {activeNav === "secrets" && <SecretDetectionTab />}
 
           {activeNav === "blockchain" && <BlockchainTab />}
 
