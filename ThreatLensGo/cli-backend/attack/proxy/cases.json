@@ -1,0 +1,268 @@
+{
+  "origin": {
+    "name": "Origin Handling",
+    "description": "Tests how the target handles different Origin values.",
+    "category": "cors",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "external_origin",
+        "method": "GET",
+        "headers": {
+          "Origin": "https://example.com"
+        }
+      },
+      {
+        "name": "null_origin",
+        "method": "GET",
+        "headers": {
+          "Origin": "null"
+        }
+      },
+      {
+        "name": "subdomain_origin",
+        "method": "GET",
+        "headers": {
+          "Origin": "https://subdomain.example.com"
+        }
+      }
+    ]
+  },
+
+  "cors_preflight": {
+    "name": "CORS Preflight",
+    "description": "Tests the target's response to CORS preflight requests.",
+    "category": "cors",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "basic_preflight",
+        "method": "OPTIONS",
+        "headers": {
+          "Origin": "https://example.com",
+          "Access-Control-Request-Method": "GET"
+        }
+      },
+      {
+        "name": "credential_preflight",
+        "method": "OPTIONS",
+        "headers": {
+          "Origin": "https://example.com",
+          "Access-Control-Request-Method": "GET",
+          "Access-Control-Request-Headers": "Authorization, Content-Type"
+        }
+      }
+    ]
+  },
+
+  "forwarded": {
+    "name": "Forwarded Header",
+    "description": "Tests handling of standardized proxy forwarding metadata.",
+    "category": "proxy",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "forwarded_host",
+        "method": "GET",
+        "headers": {
+          "Forwarded": "for=127.0.0.1;host=example.com;proto=https"
+        }
+      },
+      {
+        "name": "forwarded_chain",
+        "method": "GET",
+        "headers": {
+          "Forwarded": "for=127.0.0.1, for=10.0.0.1"
+        }
+      }
+    ]
+  },
+
+  "x_forwarded": {
+    "name": "X-Forwarded Headers",
+    "description": "Tests common reverse-proxy forwarding headers.",
+    "category": "proxy",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "forwarded_for",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-For": "127.0.0.1"
+        }
+      },
+      {
+        "name": "forwarded_host",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Host": "example.com"
+        }
+      },
+      {
+        "name": "forwarded_proto",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Proto": "https"
+        }
+      },
+      {
+        "name": "forwarded_port",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Port": "443"
+        }
+      }
+    ]
+  },
+
+  "real_ip": {
+    "name": "Client IP Headers",
+    "description": "Tests headers commonly used by proxies to communicate the originating client IP.",
+    "category": "proxy",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "x_real_ip",
+        "method": "GET",
+        "headers": {
+          "X-Real-IP": "127.0.0.1"
+        }
+      },
+      {
+        "name": "true_client_ip",
+        "method": "GET",
+        "headers": {
+          "True-Client-IP": "127.0.0.1"
+        }
+      },
+      {
+        "name": "x_client_ip",
+        "method": "GET",
+        "headers": {
+          "X-Client-IP": "127.0.0.1"
+        }
+      }
+    ]
+  },
+
+  "proxy_metadata": {
+    "name": "Proxy Metadata",
+    "description": "Tests headers that can reveal or influence upstream proxy and gateway information.",
+    "category": "proxy",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "via",
+        "method": "GET",
+        "headers": {
+          "Via": "1.1 test-proxy"
+        }
+      },
+      {
+        "name": "original_host",
+        "method": "GET",
+        "headers": {
+          "X-Original-Host": "example.com"
+        }
+      },
+      {
+        "name": "original_url",
+        "method": "GET",
+        "headers": {
+          "X-Original-URL": "/"
+        }
+      },
+      {
+        "name": "forwarded_prefix",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Prefix": "/api"
+        }
+      }
+    ]
+  },
+
+  "host_handling": {
+    "name": "Host Handling",
+    "description": "Tests how the application responds to host-related request metadata.",
+    "category": "host",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "alternate_host",
+        "method": "GET",
+        "headers": {
+          "Host": "example.com"
+        }
+      },
+      {
+        "name": "forwarded_host",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Host": "example.com"
+        }
+      }
+    ]
+  },
+
+  "scheme_handling": {
+    "name": "Scheme Handling",
+    "description": "Tests whether forwarded protocol information affects application-visible URL scheme.",
+    "category": "proxy",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "https",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Proto": "https"
+        }
+      },
+      {
+        "name": "http",
+        "method": "GET",
+        "headers": {
+          "X-Forwarded-Proto": "http"
+        }
+      }
+    ]
+  },
+
+  "cors_response": {
+    "name": "CORS Response Analysis",
+    "description": "Analyzes CORS-related response headers returned by the target.",
+    "category": "cors",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "cors_headers",
+        "method": "GET",
+        "headers": {
+          "Origin": "https://example.com"
+        }
+      },
+      {
+        "name": "credential_headers",
+        "method": "GET",
+        "headers": {
+          "Origin": "https://example.com",
+          "Cookie": "test=1"
+        }
+      }
+    ]
+  },
+
+  "response_metadata": {
+    "name": "Response Metadata",
+    "description": "Collects response headers and server metadata exposed by the target.",
+    "category": "metadata",
+    "enabled": true,
+    "tests": [
+      {
+        "name": "server_headers",
+        "method": "GET",
+        "headers": {}
+      }
+    ]
+  }
+}

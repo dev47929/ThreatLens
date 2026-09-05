@@ -1,0 +1,218 @@
+{
+  "reflected_basic": {
+    "name": "Reflected XSS - Basic HTML",
+    "description": "Basic HTML markup probes used to detect reflected input that is rendered as HTML.",
+    "category": "reflected",
+    "enabled": false,
+    "probes": [
+      {
+        "name": "html_tag",
+        "value": "<xss>"
+      },
+      {
+        "name": "html_tag_attribute",
+        "value": "<xss title=xss>"
+      },
+      {
+        "name": "html_comment",
+        "value": "<!--xss-->"
+      }
+    ]
+  },
+  "reflected_script": {
+    "name": "Reflected XSS - Script Context",
+    "description": "Script-oriented probes for inputs reflected into executable JavaScript contexts.",
+    "category": "reflected",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "script_tag",
+        "value": "<script>xss</script>"
+      },
+      {
+        "name": "script_string_break",
+        "value": "';xss;//"
+      },
+      {
+        "name": "double_quote_break",
+        "value": "\";xss;//"
+      }
+    ]
+  },
+  "event_handler": {
+    "name": "Event Handler XSS",
+    "description": "HTML event-handler probes used to identify contexts where attacker-controlled attributes are interpreted.",
+    "category": "html_attribute",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "onerror",
+        "value": "<img src=x onerror=xss>"
+      },
+      {
+        "name": "onload",
+        "value": "<svg onload=xss>"
+      },
+      {
+        "name": "onclick",
+        "value": "<button onclick=xss>x</button>"
+      }
+    ]
+  },
+  "attribute_context": {
+    "name": "HTML Attribute Context",
+    "description": "Quote-breaking probes used to detect reflection inside HTML attributes.",
+    "category": "attribute",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "double_quote_break",
+        "value": "\"><xss>"
+      },
+      {
+        "name": "single_quote_break",
+        "value": "'><xss>"
+      },
+      {
+        "name": "attribute_injection",
+        "value": "\" autofocus x=\""
+      }
+    ]
+  },
+  "tag_breakout": {
+    "name": "HTML Tag Breakout",
+    "description": "Markup probes designed to detect whether user input can break out of an existing HTML element.",
+    "category": "html",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "tag_breakout",
+        "value": "</textarea><xss>"
+      },
+      {
+        "name": "input_breakout",
+        "value": "\"><xss>"
+      },
+      {
+        "name": "title_breakout",
+        "value": "</title><xss>"
+      }
+    ]
+  },
+  "encoded": {
+    "name": "Encoded XSS",
+    "description": "Encoded representations used to identify inadequate output encoding or decoding before rendering.",
+    "category": "encoding",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "html_entity",
+        "value": "&lt;xss&gt;"
+      },
+      {
+        "name": "percent_encoded",
+        "value": "%3Cxss%3E"
+      },
+      {
+        "name": "double_encoded",
+        "value": "%253Cxss%253E"
+      }
+    ]
+  },
+  "javascript_protocol": {
+    "name": "JavaScript URL Context",
+    "description": "URL-context probes for inputs that may be placed into href or similar URL attributes.",
+    "category": "url",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "javascript_scheme",
+        "value": "javascript:xss"
+      },
+      {
+        "name": "javascript_encoded",
+        "value": "java%73cript:xss"
+      }
+    ]
+  },
+  "svg_context": {
+    "name": "SVG-based XSS",
+    "description": "SVG markup probes for HTML contexts that permit SVG elements.",
+    "category": "svg",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "svg_element",
+        "value": "<svg>xss</svg>"
+      },
+      {
+        "name": "svg_event",
+        "value": "<svg onload=xss>"
+      }
+    ]
+  },
+  "stored_marker": {
+    "name": "Stored XSS Marker",
+    "description": "Unique persistent markers used to determine whether attacker-controlled input is stored and later reflected.",
+    "category": "stored",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "unique_marker",
+        "value": "XSS_THREADLENS_MARKER"
+      },
+      {
+        "name": "html_marker",
+        "value": "<xss>THREADLENS_MARKER</xss>"
+      }
+    ]
+  },
+  "dom_marker": {
+    "name": "DOM XSS Marker",
+    "description": "Markers used to identify attacker-controlled data reaching browser DOM sinks.",
+    "category": "dom",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "dom_marker",
+        "value": "THREADLENS_DOM_XSS"
+      },
+      {
+        "name": "dom_html_marker",
+        "value": "<xss>THREADLENS_DOM_XSS</xss>"
+      }
+    ]
+  },
+  "template_context": {
+    "name": "Template Context XSS",
+    "description": "Template-expression probes for applications that interpolate user-controlled values through client or server templates.",
+    "category": "template",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "double_brace",
+        "value": "{{xss}}"
+      },
+      {
+        "name": "expression",
+        "value": "${xss}"
+      },
+      {
+        "name": "bracket_expression",
+        "value": "#{xss}"
+      }
+    ]
+  },
+  "plain_marker": {
+    "name": "Reflection Marker",
+    "description": "Harmless unique markers used to establish whether input is reflected before interpreting the result as an XSS finding.",
+    "category": "reflection",
+    "enabled": true,
+    "probes": [
+      {
+        "name": "plain_marker",
+        "value": "THREADLENS_XSS_MARKER_12345"
+      }
+    ]
+  }
+}
