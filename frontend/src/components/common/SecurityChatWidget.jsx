@@ -353,13 +353,6 @@ export default function SecurityChatWidget() {
                     <span className="font-semibold text-sm text-white tracking-wide">
                       ThreatLens Security AI
                     </span>
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-950/80 text-cyan-400 border border-cyan-500/30">
-                      LIVE
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Security-Only Guardrail Active</span>
                   </div>
                 </div>
               </div>
@@ -385,20 +378,6 @@ export default function SecurityChatWidget() {
               </div>
             </div>
 
-            {/* Subheader: Streaming API Key Status Bar */}
-            <div className="px-3.5 py-1.5 bg-[#0b101c] border-b border-white/5 flex items-center justify-between text-[11px] text-slate-400 font-mono">
-              <div className="flex items-center gap-1.5 truncate">
-                <Lock className="w-3 h-3 text-cyan-400 shrink-0" />
-                <span className="text-slate-400">Streaming API Key:</span>
-                <span className="text-cyan-400 font-semibold truncate max-w-[170px]">
-                  {apiKey ? `${apiKey.slice(0, 14)}...` : "Connecting..."}
-                </span>
-              </div>
-              <span className="text-emerald-400 text-[10px] bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                TOKEN READY
-              </span>
-            </div>
-
             {/* Message Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
               {messages.length === 0 ? (
@@ -414,10 +393,6 @@ export default function SecurityChatWidget() {
                       Specialized strictly for security auditing, attack telemetry,
                       OWASP defenses, and vulnerability analysis.
                     </p>
-                    <div className="inline-flex items-center gap-1 text-[11px] text-amber-300/90 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">
-                      <Info className="w-3 h-3 shrink-0" />
-                      <span>Non-security questions are restricted.</span>
-                    </div>
                   </div>
 
                   {/* Starter Prompts */}
