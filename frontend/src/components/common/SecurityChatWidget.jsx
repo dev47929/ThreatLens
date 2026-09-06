@@ -18,6 +18,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Streamdown } from "streamdown";
 
 // Backend endpoints with proxy and direct port 8000 fallbacks
 const PRIMARY_STREAM_URL = "/security-chat/stream";
@@ -281,8 +282,8 @@ export default function SecurityChatWidget() {
             <span>Security Domain Enforcement Notice</span>
           </div>
         )}
-        <div className="whitespace-pre-wrap leading-relaxed text-sm text-slate-200">
-          {content}
+        <div className="markdown-content text-sm text-slate-200 leading-relaxed max-w-none">
+          <Streamdown>{content}</Streamdown>
         </div>
       </div>
     );
