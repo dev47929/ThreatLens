@@ -48,6 +48,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "/security-chat": {
+          target: env.VITE_BACKEND_URL || "http://localhost:8000",
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };

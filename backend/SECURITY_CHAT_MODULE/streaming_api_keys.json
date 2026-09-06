@@ -1,0 +1,27 @@
+{
+  "tl_stream_threatlens_secure_live_key_2026": {
+    "name": "System Default Streaming Key",
+    "created_at": 1788670869,
+    "scopes": [
+      "stream:chat",
+      "security:audit"
+    ],
+    "is_active": true
+  },
+  "tl_stream_bgYaiRTl5IFd0dIps-H3_HDCX3fhiEhpUCuQtg": {
+    "name": "test_client",
+    "created_at": 1788670869,
+    "scopes": [
+      "stream:chat"
+    ],
+    "is_active": true
+  },
+  "tl_stream_BExFj0iSNnyI4Ib9EseEhuN6MVTnLn8lhilPCA": {
+    "name": "external-agent",
+    "created_at": 1788670949,
+    "scopes": [
+      "stream:chat"
+    ],
+    "is_active": true
+  }
+}

@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 
 // Common Components
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import SecurityChatWidget from "@/components/common/SecurityChatWidget";
 
 // Page Views
 import LandingPage from "@/pages/landing/LandingPage";
@@ -44,6 +45,7 @@ export default function App() {
       <ThemeProvider defaultTheme="dark">
         <AuthProvider>
           <Router />
+          <SecurityChatWidget />
           <Toaster position="top-right" theme="dark" richColors />
         </AuthProvider>
       </ThemeProvider>
