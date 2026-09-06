@@ -28,7 +28,6 @@
       }
     ]
   },
-
   "cors_preflight": {
     "name": "CORS Preflight",
     "description": "Tests the target's response to CORS preflight requests.",
@@ -54,7 +53,6 @@
       }
     ]
   },
-
   "forwarded": {
     "name": "Forwarded Header",
     "description": "Tests handling of standardized proxy forwarding metadata.",
@@ -77,7 +75,6 @@
       }
     ]
   },
-
   "x_forwarded": {
     "name": "X-Forwarded Headers",
     "description": "Tests common reverse-proxy forwarding headers.",
@@ -114,7 +111,6 @@
       }
     ]
   },
-
   "real_ip": {
     "name": "Client IP Headers",
     "description": "Tests headers commonly used by proxies to communicate the originating client IP.",
@@ -144,7 +140,6 @@
       }
     ]
   },
-
   "proxy_metadata": {
     "name": "Proxy Metadata",
     "description": "Tests headers that can reveal or influence upstream proxy and gateway information.",
@@ -181,7 +176,6 @@
       }
     ]
   },
-
   "host_handling": {
     "name": "Host Handling",
     "description": "Tests how the application responds to host-related request metadata.",
@@ -204,7 +198,6 @@
       }
     ]
   },
-
   "scheme_handling": {
     "name": "Scheme Handling",
     "description": "Tests whether forwarded protocol information affects application-visible URL scheme.",
@@ -227,7 +220,6 @@
       }
     ]
   },
-
   "cors_response": {
     "name": "CORS Response Analysis",
     "description": "Analyzes CORS-related response headers returned by the target.",
@@ -251,7 +243,6 @@
       }
     ]
   },
-
   "response_metadata": {
     "name": "Response Metadata",
     "description": "Collects response headers and server metadata exposed by the target.",

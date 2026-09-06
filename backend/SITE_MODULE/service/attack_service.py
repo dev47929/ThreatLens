@@ -6,8 +6,6 @@ from .email_service import send_attack_report
 import threading
 
 
-
-
 def post_attack(
     user: dict,
     attack_id: str,
