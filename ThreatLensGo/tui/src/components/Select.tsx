@@ -33,8 +33,10 @@ const CustomItem: React.FC<ItemProps> = React.memo(({ isSelected, label }) => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row" flexWrap="nowrap">
-          {isSelected && (
+          {isSelected ? (
             <Text color={theme.highlight} bold>{'▌ '}</Text>
+          ) : (
+            <Text>{'  '}</Text>
           )}
           <Text
             color={theme.text}
@@ -61,8 +63,10 @@ const CustomItem: React.FC<ItemProps> = React.memo(({ isSelected, label }) => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row" flexWrap="nowrap">
-          {isSelected && (
+          {isSelected ? (
             <Text color={theme.highlight} bold>{'▌ '}</Text>
+          ) : (
+            <Text>{'  '}</Text>
           )}
           <Text
             color={theme.text}
@@ -85,8 +89,10 @@ const CustomItem: React.FC<ItemProps> = React.memo(({ isSelected, label }) => {
 
   return (
     <Box flexDirection="row" alignItems="center">
-      {isSelected && (
+      {isSelected ? (
         <Text color={theme.highlight} bold>{'▌ '}</Text>
+      ) : (
+        <Text>{'  '}</Text>
       )}
       <Text
         color={theme.text}

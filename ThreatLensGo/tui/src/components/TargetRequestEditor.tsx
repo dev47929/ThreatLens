@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { Select } from './Select.js';
 import { useTheme } from '../state/themeContext.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
 import type { AttackTargetConfig, AttackRequestConfig } from '../state/securitySession.js';
 
 export interface TargetRequestEditorProps {
@@ -187,6 +188,7 @@ export const TargetRequestEditor: React.FC<TargetRequestEditorProps> = ({
   title = 'Configure Target & Request Parameters',
 }) => {
   const { theme } = useTheme();
+  const { rows } = useTerminalSize();
 
   const [target, setTarget] = useState<AttackTargetConfig>({ ...initialTarget });
   const [request, setRequest] = useState<AttackRequestConfig>({ ...initialRequest });
@@ -314,7 +316,7 @@ export const TargetRequestEditor: React.FC<TargetRequestEditorProps> = ({
 
   const menuOptions = [
     {
-      label: `💾 Save & Apply Configuration (${target.method} ${target.base_url}${target.endpoint})`,
+      label: `💾 Save & Apply Configuration`,
       value: 'save',
     },
     {
@@ -350,7 +352,7 @@ export const TargetRequestEditor: React.FC<TargetRequestEditorProps> = ({
       value: 'body',
     },
     {
-      label: `📋 9. Quick Presets (ThreatLens Pulse, Fintech, Health API, Social)...`,
+      label: `📋 9. Quick Presets...`,
       value: 'presets',
     },
     {
@@ -360,16 +362,18 @@ export const TargetRequestEditor: React.FC<TargetRequestEditorProps> = ({
   ];
 
   return (
-    <Box flexDirection="column" paddingY={1}>
+    <Box flexDirection="column">
       {/* Title */}
-      <Box marginBottom={1} flexDirection="column">
-        <Text bold color={theme.highlight}>
-          {title}
-        </Text>
-        <Text color="gray" dimColor>
-          Configure `request.target` and `request.request` payload parameters
-        </Text>
-      </Box>
+      {title ? (
+        <Box marginBottom={1} flexDirection="column">
+          <Text bold color={theme.highlight}>
+            {title}
+          </Text>
+          <Text color="gray" dimColor>
+            Configure `request.target` and `request.request` payload parameters
+          </Text>
+        </Box>
+      ) : null}
 
       {/* Active configuration preview badge */}
       <Box
@@ -380,37 +384,22 @@ export const TargetRequestEditor: React.FC<TargetRequestEditorProps> = ({
         flexDirection="column"
       >
         <Box flexDirection="row">
-          <Box width={16}>
-            <Text bold color="cyan">target.method:</Text>
-          </Box>
-          <Text bold color="yellow">{target.method}</Text>
-          <Box width={16} marginLeft={2}>
-            <Text bold color="cyan">target.base_url:</Text>
-          </Box>
-          <Text color="white">{target.base_url}</Text>
-        </Box>
-        <Box flexDirection="row">
-          <Box width={16}>
-            <Text bold color="cyan">target.endpoint:</Text>
-          </Box>
-          <Text bold color="green">{target.endpoint}</Text>
-          <Box width={16} marginLeft={2}>
-            <Text bold color="cyan">full target:</Text>
-          </Box>
+          <Text color="gray">Target: </Text>
+          <Text bold color="yellow">[{target.method}] </Text>
           <Text bold color="cyan">{target.base_url}{target.endpoint}</Text>
         </Box>
         <Box flexDirection="row">
-          <Box width={16}>
-            <Text color="gray">query_params:</Text>
-          </Box>
+          <Text color="gray">Config: </Text>
           <Text color={target.query_params ? 'white' : 'gray'}>
-            {target.query_params ? JSON.stringify(target.query_params) : 'null'}
+            params: {target.query_params ? JSON.stringify(target.query_params) : 'none'}
           </Text>
-          <Box width={16} marginLeft={2}>
-            <Text color="gray">headers:</Text>
-          </Box>
+          <Text color="gray"> · </Text>
           <Text color={request.headers ? 'white' : 'gray'}>
-            {request.headers ? JSON.stringify(request.headers) : 'null'}
+            headers: {request.headers ? 'configured' : 'none'}
+          </Text>
+          <Text color="gray"> · </Text>
+          <Text color={request.auth ? 'white' : 'gray'}>
+            auth: {request.auth ? 'configured' : 'none'}
           </Text>
         </Box>
       </Box>
@@ -422,6 +411,7 @@ export const TargetRequestEditor: React.FC<TargetRequestEditorProps> = ({
             items={menuOptions}
             onSelect={handleMenuSelect}
             isFocused={isInteractive}
+            limit={rows && rows < 34 ? 6 : 8}
           />
         </Box>
       )}

@@ -157,3 +157,5 @@ export class OpenAILLMClient implements LLMClient {
     return parseOpenAISSEStream(res.body, callbacks);
   }
 }
+
+export { FallbackLLMClient, type FallbackTier, type FallbackLLMClientOptions } from './fallbackLLMClient.js';

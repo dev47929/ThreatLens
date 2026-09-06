@@ -148,49 +148,54 @@ export const TargetUrlScreen: React.FC = () => {
 
   return (
     <TerminalLayout
-      title="Target & Request Configuration"
-      subtitle="Select a target preset or customize endpoint, HTTP method, headers, auth & body"
+      title={mode === 'editor' ? 'Custom Target & Request Configuration' : 'Target & Request Configuration'}
+      subtitle={
+        mode === 'editor'
+          ? 'Configure HTTP target endpoint, method, headers, auth & body'
+          : 'Select a target preset or customize endpoint, HTTP method, headers, auth & body'
+      }
       breadcrumb="SECURITY > TARGET CONFIG"
       accentColor="yellow"
       statusText={mode === 'editor' ? 'CUSTOM CONFIGURATION' : 'AWAITING SELECTION'}
       statusType="ready"
       keyHints={mode === 'preset' ? '↑↓ choose preset · enter select · esc back' : 'enter select/confirm · esc cancel'}
     >
-      <Box flexDirection="column" marginY={1}>
-        {/* Active Target Banner */}
-        <Box
-          borderStyle="single"
-          borderColor="gray"
-          paddingX={1}
-          marginBottom={1}
-          flexDirection="column"
-        >
-          <Text color="gray">
-            Current Session Target:{' '}
-            <Text bold color="yellow">[{targetConfig.method}]</Text>{' '}
-            <Text bold color="cyan">{targetConfig.base_url}{targetConfig.endpoint}</Text>
-          </Text>
-          <Text color="gray" dimColor>
-            Headers: {targetConfig.query_params ? JSON.stringify(targetConfig.query_params) : 'none'} · Auth: {requestConfig.auth ? 'configured' : 'none'}
-          </Text>
-        </Box>
-
+      <Box flexDirection="column">
         {mode === 'preset' ? (
-          <Box flexDirection="column">
-            <Text bold color="white">
-              Select Active Target Endpoint Preset:
-            </Text>
-            <Box marginTop={1}>
-              <Select items={PRESET_OPTIONS} onSelect={handlePresetSelect} isFocused={isInteractive} />
+          <>
+            {/* Active Target Banner (only in preset mode, since editor has its own preview) */}
+            <Box
+              borderStyle="single"
+              borderColor="gray"
+              paddingX={1}
+              marginBottom={1}
+              flexDirection="column"
+            >
+              <Text color="gray">
+                Current Session Target:{' '}
+                <Text bold color="yellow">[{targetConfig.method}]</Text>{' '}
+                <Text bold color="cyan">{targetConfig.base_url}{targetConfig.endpoint}</Text>
+              </Text>
+              <Text color="gray" dimColor>
+                Headers: {targetConfig.query_params ? JSON.stringify(targetConfig.query_params) : 'none'} · Auth: {requestConfig.auth ? 'configured' : 'none'}
+              </Text>
             </Box>
-          </Box>
+
+            <Box flexDirection="column">
+              <Text bold color="white">
+                Select Active Target Endpoint Preset:
+              </Text>
+              <Box marginTop={1}>
+                <Select items={PRESET_OPTIONS} onSelect={handlePresetSelect} isFocused={isInteractive} />
+              </Box>
+            </Box>
+          </>
         ) : (
           <TargetRequestEditor
             initialTarget={targetConfig}
             initialRequest={requestConfig}
             onSave={handleEditorSave}
             onCancel={() => setMode('preset')}
-            title="Custom Target & Request Configuration"
           />
         )}
       </Box>

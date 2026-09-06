@@ -8,7 +8,7 @@ import { FileWatcher } from '../indexer/fileWatcher.js';
 import { ToolRegistry } from './tools/toolRegistry.js';
 import { AutonomousAgentLoop } from './AutonomousAgentLoop.js';
 import { AgentController } from './types.js';
-import { LLMClient, OpenAILLMClient } from './llm/llmClient.js';
+import { LLMClient, OpenAILLMClient, FallbackLLMClient } from './llm/llmClient.js';
 import { BackendGatewayLLMClient } from './llm/backendGatewayClient.js';
 import { backendClient } from '../api/backendClient.js';
 import { MockAgentController } from './MockAgentController.js';
@@ -68,11 +68,17 @@ export class ThreatLensAgentManager {
     this.watcher = new FileWatcher(this.workspaceRoot, this.store, extractor);
     await this.watcher.start();
 
-    // 4. Resolve LLM Client priority:
+    // 4. Resolve Resilient LLM Client with Fallback Architecture:
+    // Priority:
     // (1) options.customLLM if provided
-    // (2) BackendGatewayLLMClient if backend is online
-    // (3) OpenAILLMClient if local API keys exist
-    // (4) MockAgentController otherwise
+    // (2) FallbackLLMClient chain:
+    //     - Tier 1: BackendGatewayLLMClient (if backend is online)
+    //     - Tier 2: Direct OpenRouter (Primary model)
+    //     - Tier 3: Direct OpenRouter (Llama 3.3 70B Free fallback model)
+    //     - Tier 4: Direct OpenRouter (Gemini 2.0 Flash fallback model)
+    //     - Tier 5: Direct Groq (if configured)
+    //     - Tier 6: Direct OpenAI (if configured)
+    // (3) MockAgentController if no backend and no credentials exist
     let llmClient: LLMClient;
 
     if (options?.customLLM) {
@@ -80,6 +86,11 @@ export class ThreatLensAgentManager {
       this.isLive = true;
       this.modelName = 'Custom LLM';
     } else {
+      const openRouterKey = process.env.OPENROUTER_API_KEY || process.env.OPEN_ROUTER_API_KEY;
+      const groqKey = process.env.GROQ_API_KEY;
+      const openAiKey = process.env.OPENAI_API_KEY;
+      const primaryModel = process.env.LLM_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
+
       let isBackendOnline = false;
       try {
         const pulse = await backendClient.pulse();
@@ -88,34 +99,101 @@ export class ThreatLensAgentManager {
         isBackendOnline = false;
       }
 
+      const tiers: Array<{ id: string; name: string; client: LLMClient }> = [];
+
+      // Tier 1: Backend Gateway (if online)
       if (isBackendOnline) {
-        this.isLive = true;
-        const model = process.env.LLM_MODEL || 'default';
-        this.modelName = `Backend Gateway (${model})`;
-        llmClient = new BackendGatewayLLMClient(process.env.LLM_MODEL);
-      } else {
-        const openRouterKey = process.env.OPENROUTER_API_KEY;
-        const openAiKey = process.env.OPENAI_API_KEY;
-        const anthropicKey = process.env.ANTHROPIC_API_KEY;
-        const apiKey = openRouterKey || openAiKey || anthropicKey;
+        tiers.push({
+          id: 'backend-gateway',
+          name: `Backend Gateway (${primaryModel})`,
+          client: new BackendGatewayLLMClient(primaryModel),
+        });
+      }
 
-        if (apiKey) {
-          this.isLive = true;
-          this.modelName = process.env.LLM_MODEL || (openRouterKey ? 'anthropic/claude-3.5-sonnet' : 'gpt-4o');
-          const baseUrl = process.env.LLM_BASE_URL || (openRouterKey ? 'https://openrouter.ai/api/v1' : 'https://api.openai.com/v1');
+      // Tier 2: Direct OpenRouter (Primary Model)
+      if (openRouterKey) {
+        tiers.push({
+          id: 'direct-openrouter-primary',
+          name: `Direct OpenRouter (${primaryModel})`,
+          client: new OpenAILLMClient({
+            apiKey: openRouterKey,
+            baseUrl: process.env.LLM_BASE_URL || 'https://openrouter.ai/api/v1',
+            model: primaryModel,
+          }),
+        });
 
-          llmClient = new OpenAILLMClient({
-            apiKey,
-            baseUrl,
-            model: this.modelName,
+        // Tier 3: Direct OpenRouter Alternative Model (Llama 3.3 70B Free)
+        if (primaryModel !== 'meta-llama/llama-3.3-70b-instruct:free') {
+          tiers.push({
+            id: 'direct-openrouter-llama',
+            name: 'Direct OpenRouter (meta-llama/llama-3.3-70b-instruct:free)',
+            client: new OpenAILLMClient({
+              apiKey: openRouterKey,
+              baseUrl: 'https://openrouter.ai/api/v1',
+              model: 'meta-llama/llama-3.3-70b-instruct:free',
+            }),
           });
-        } else {
-          // Fallback to MockAgentController if no API keys are provided in terminal environment
-          this.isLive = false;
-          this.modelName = 'Simulated Agent (Set OPENROUTER_API_KEY for live LLM)';
-          this.controller = new MockAgentController();
-          return this.controller;
         }
+
+        // Tier 4: Direct OpenRouter Alternative Model (Gemini 2.0 Flash)
+        if (primaryModel !== 'google/gemini-2.0-flash-001') {
+          tiers.push({
+            id: 'direct-openrouter-gemini',
+            name: 'Direct OpenRouter (google/gemini-2.0-flash-001)',
+            client: new OpenAILLMClient({
+              apiKey: openRouterKey,
+              baseUrl: 'https://openrouter.ai/api/v1',
+              model: 'google/gemini-2.0-flash-001',
+            }),
+          });
+        }
+      }
+
+      // Tier 5: Direct Groq (if configured)
+      if (groqKey) {
+        const cleanGroqKey = groqKey.replace(/^"|"$/g, '');
+        tiers.push({
+          id: 'direct-groq',
+          name: 'Direct Groq (llama-3.3-70b-versatile)',
+          client: new OpenAILLMClient({
+            apiKey: cleanGroqKey,
+            baseUrl: 'https://api.groq.com/openai/v1',
+            model: 'llama-3.3-70b-versatile',
+          }),
+        });
+      }
+
+      // Tier 6: Direct OpenAI (if configured)
+      if (openAiKey) {
+        tiers.push({
+          id: 'direct-openai',
+          name: 'Direct OpenAI (gpt-4o)',
+          client: new OpenAILLMClient({
+            apiKey: openAiKey,
+            baseUrl: 'https://api.openai.com/v1',
+            model: 'gpt-4o',
+          }),
+        });
+      }
+
+      if (tiers.length > 0) {
+        this.isLive = true;
+        const fallbackCount = tiers.length - 1;
+        this.modelName = fallbackCount > 0
+          ? `${tiers[0].name} (+${fallbackCount} fallback tiers)`
+          : tiers[0].name;
+
+        llmClient = new FallbackLLMClient(tiers, {
+          onTierSwitched: (fromTier, toTier) => {
+            this.modelName = `${toTier} (active fallback)`;
+          },
+        });
+      } else {
+        // Fallback to MockAgentController if no API keys are provided in terminal environment
+        this.isLive = false;
+        this.modelName = 'Simulated Agent (Set OPENROUTER_API_KEY for live LLM)';
+        this.controller = new MockAgentController();
+        return this.controller;
       }
     }
 

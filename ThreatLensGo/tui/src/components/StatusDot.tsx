@@ -16,10 +16,8 @@ interface StatusDotProps {
 export const StatusDot: React.FC<StatusDotProps> = ({ statusType, statusText }) => {
   const isProcessing = statusText.toUpperCase().includes('PROCESS');
   const needsDots = statusType === 'ready' && isProcessing;
-  const needsPulse = statusType === 'ready' && !isProcessing;
 
   const dotsFrame = useSpinnerFrame('dots', 160, needsDots);
-  const pulseFrame = useSpinnerFrame('pulse', 800, needsPulse);
 
   const getColor = () => {
     switch (statusType) {
@@ -35,7 +33,7 @@ export const StatusDot: React.FC<StatusDotProps> = ({ statusType, statusText }) 
       case 'success': return '✓';
       case 'error':   return '✗';
       case 'warning': return '⚠';
-      default:        return isProcessing ? dotsFrame : pulseFrame;
+      default:        return isProcessing ? dotsFrame : '◆';
     }
   };
 
