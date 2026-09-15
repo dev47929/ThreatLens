@@ -22,7 +22,7 @@ import { Streamdown } from "streamdown";
 
 // Backend endpoints with proxy and direct port 8000 fallbacks
 const PRIMARY_STREAM_URL = "/security-chat/stream";
-const FALLBACK_STREAM_URL = "http://localhost:8000/security-chat/stream";
+const FALLBACK_STREAM_URL = "http://api.codesena.me/security-chat/stream";
 const PRIMARY_KEY_URL = "/security-chat/api-key/token";
 const FALLBACK_KEY_URL = "http://localhost:8000/security-chat/api-key/token";
 
@@ -310,11 +310,11 @@ export default function SecurityChatWidget() {
               className="relative flex items-center justify-center w-14 h-14 rounded-full bg-[#0a0f1d] border border-cyan-500/40 text-cyan-400 shadow-2xl shadow-cyan-950/80 hover:border-cyan-400 hover:text-cyan-300 hover:scale-105 active:scale-95 transition-all duration-200"
             >
               <div className="relative flex items-center justify-center">
-                <img
-                  src="/chatbot-logo.png"
-                  alt="Security Intelligence AI"
-                  className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-transform duration-300 group-hover:scale-110"
-                />
+                <Bot className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] transition-transform duration-300 group-hover:scale-110" />
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                </span>
               </div>
 
             </button>
@@ -343,11 +343,7 @@ export default function SecurityChatWidget() {
             <div className="relative px-4 py-3.5 bg-[#0e1424] border-b border-cyan-500/20 flex items-center justify-between select-none">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-inner p-1">
-                  <img
-                    src="/chatbot-logo.png"
-                    alt="ThreatLens AI"
-                    className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]"
-                  />
+                  <Bot className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -385,11 +381,7 @@ export default function SecurityChatWidget() {
                 <div className="h-full flex flex-col justify-center space-y-4">
                   <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-950/30 via-[#0f172a]/60 to-blue-950/20 border border-cyan-500/20 text-center space-y-2">
                     <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center p-2">
-                      <img
-                        src="/chatbot-logo.png"
-                        alt="ThreatLens AI"
-                        className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]"
-                      />
+                      <Bot className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
                     </div>
                     <h4 className="text-sm font-semibold text-white">
                       Cybersecurity Intelligence Agent
@@ -432,11 +424,7 @@ export default function SecurityChatWidget() {
                     <div className="flex items-center gap-1.5 mb-1 px-1 text-[10px] text-slate-400">
                       {msg.role === "assistant" ? (
                         <>
-                          <img
-                            src="/chatbot-logo.png"
-                            alt=""
-                            className="w-3.5 h-3.5 object-contain"
-                          />
+                          <Bot className="w-3.5 h-3.5 text-cyan-400" />
                           <span className="font-semibold text-cyan-400">
                             ThreatLens AI
                           </span>

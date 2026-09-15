@@ -39,7 +39,7 @@ const ATTACK_FILTER_OPTIONS = [
   { id: "origin & proxy", label: "Origin & Proxy" },
 ];
 
-function normalizeBackendAttack(item, userEmail) {
+export function normalizeBackendAttack(item, userEmail) {
   const attackType = (item.attack_type || item.type || "attack").toLowerCase();
   const configObj = item.config || {};
   const targetObj = configObj.target || item.request?.target || {};
@@ -166,6 +166,53 @@ function normalizeBackendAttack(item, userEmail) {
     responseSummary,
     duration,
   };
+}
+
+export function getSeverityBadgeClass(severity) {
+  switch (severity?.toLowerCase()) {
+    case "critical":
+      return "bg-rose-500/15 text-rose-400 border-rose-500/30";
+    case "high":
+      return "bg-amber-500/15 text-amber-400 border-amber-500/30";
+    case "medium":
+      return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
+    case "low":
+      return "bg-sky-500/15 text-sky-400 border-sky-500/30";
+    default:
+      return "bg-slate-500/15 text-slate-400 border-slate-500/30";
+  }
+}
+
+export function getStatusBadge(status) {
+  switch (status?.toLowerCase()) {
+    case "blocked":
+    case "completed":
+      return {
+        icon: ShieldCheck,
+        class: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+      };
+    case "detected":
+      return {
+        icon: AlertTriangle,
+        class: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+      };
+    case "mitigated":
+      return {
+        icon: Zap,
+        class: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+      };
+    case "bypassed":
+    case "failed":
+      return {
+        icon: XCircle,
+        class: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+      };
+    default:
+      return {
+        icon: Activity,
+        class: "bg-slate-500/15 text-slate-400 border-slate-500/30",
+      };
+  }
 }
 
 export default function AttackHistoryTab({
@@ -385,57 +432,6 @@ export default function AttackHistoryTab({
     navigator.clipboard.writeText(text);
     setActiveMenuId(null);
     toast.success(`${label} copied to clipboard!`);
-  };
-
-  const getSeverityBadgeClass = (severity) => {
-    switch (severity?.toLowerCase()) {
-      case "critical":
-        return "bg-rose-500/15 text-rose-400 border-rose-500/30";
-      case "high":
-        return "bg-amber-500/15 text-amber-400 border-amber-500/30";
-      case "medium":
-        return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
-      case "low":
-        return "bg-sky-500/15 text-sky-400 border-sky-500/30";
-      default:
-        return "bg-slate-500/15 text-slate-400 border-slate-500/30";
-    }
-  };
-
-  const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
-      case "blocked":
-        return {
-          icon: ShieldCheck,
-          class: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-        };
-      case "completed":
-        return {
-          icon: ShieldCheck,
-          class: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-        };
-      case "detected":
-        return {
-          icon: AlertTriangle,
-          class: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-        };
-      case "mitigated":
-        return {
-          icon: Zap,
-          class: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
-        };
-      case "bypassed":
-      case "failed":
-        return {
-          icon: XCircle,
-          class: "bg-rose-500/15 text-rose-400 border-rose-500/30",
-        };
-      default:
-        return {
-          icon: Activity,
-          class: "bg-slate-500/15 text-slate-400 border-slate-500/30",
-        };
-    }
   };
 
   const activeFilterLabel =

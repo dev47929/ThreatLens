@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   Search,
-  Plus,
   Briefcase,
   MoreVertical,
   ArrowDown,
@@ -21,75 +20,27 @@ import GradientWaves from "@/animations/GradientWaves";
 const INITIAL_PROMPTS = [
   {
     id: "p-1",
-    name: "[SHOWCASE] Outbound Medical Records Prompt",
+    name: "SQL Injection Vulnerability Assessment",
     version: "v1",
-    description: "Outbound medical records retrieval",
-    toolsCount: 3,
+    description: "Automated analysis and AST remediation for authentication endpoints",
+    toolsCount: 4,
     agentsCount: 1,
-    lastModified: "8/26/26, 10:39 AM GMT+5:30",
+    lastModified: "9/15/26, 10:39 AM GMT+5:30",
     authorEmail: "tejalmishra1@gmail.com",
     promptText:
-      "Analyze medical records and cross-reference ICD-10 codes for automated authorization workflows.",
+      "Analyze the authentication controller for SQL injection vulnerabilities, trace tainted query parameters, and generate verified AST-level remediation patches.",
   },
   {
     id: "p-2",
-    name: "[SHOWCASE] Outbound Appointment Reminder Prompt",
+    name: "API Rate Limiting & Auth Hardening",
     version: "v1",
-    description: "Outbound appointment reminders",
-    toolsCount: 4,
-    agentsCount: 1,
-    lastModified: "8/26/26, 10:39 AM GMT+5:30",
-    authorEmail: "tejalmishra1@gmail.com",
-    promptText:
-      "Generate patient appointment reminders, parse confirmation responses, and route rescheduling intents.",
-  },
-  {
-    id: "p-3",
-    name: "[SHOWCASE] Insurance Claims Prompt",
-    version: "v1",
-    description: "Auto and home insurance claims",
-    toolsCount: 4,
-    agentsCount: 1,
-    lastModified: "8/26/26, 10:39 AM GMT+5:30",
-    authorEmail: "tejalmishra1@gmail.com",
-    promptText:
-      "Validate insurance policy numbers, extract incident damage photos, and calculate claim deductibles.",
-  },
-  {
-    id: "p-4",
-    name: "[SHOWCASE] Home Services Prompt",
-    version: "v1",
-    description: "Home services routing",
-    toolsCount: 4,
-    agentsCount: 1,
-    lastModified: "8/26/26, 10:39 AM GMT+5:30",
-    authorEmail: "tejalmishra1@gmail.com",
-    promptText:
-      "Triage HVAC and plumbing maintenance requests, check technician availability, and dispatch dispatch alerts.",
-  },
-  {
-    id: "p-5",
-    name: "[SHOWCASE] Healthcare Receptionist Prompt",
-    version: "v1",
-    description: "Patient scheduling & intake",
+    description: "Endpoint rate limits, session security, and DDoS resilience review",
     toolsCount: 3,
-    agentsCount: 2,
-    lastModified: "8/26/26, 10:39 AM GMT+5:30",
+    agentsCount: 1,
+    lastModified: "9/15/26, 11:15 AM GMT+5:30",
     authorEmail: "tejalmishra1@gmail.com",
     promptText:
-      "Handle front-desk patient intake, collect insurance documentation, and manage waiting room queues.",
-  },
-  {
-    id: "p-6",
-    name: "[SHOWCASE] Cloud Infrastructure Security Audit",
-    version: "v2",
-    description: "AWS IAM & Terraform posture review",
-    toolsCount: 5,
-    agentsCount: 2,
-    lastModified: "8/26/26, 10:39 AM GMT+5:30",
-    authorEmail: "tejalmishra1@gmail.com",
-    promptText:
-      "Scan Terraform modules for open S3 buckets, excessive IAM wildcards, and unencrypted RDS instances.",
+      "Scan public API routes for missing rate limits and evaluate DoS mitigation controls with dynamic exploit fuzzing.",
   },
 ];
 
@@ -203,16 +154,6 @@ export default function PromptHistoryTab({ user }) {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Quick Action Button */}
-            <button
-              onClick={() => setIsNewPromptOpen(true)}
-              className="px-4 py-2 rounded-xl bg-[#1e5adb] hover:bg-[#1849b8] text-white font-semibold text-xs shadow-[0_0_16px_rgba(30,90,219,0.35)] transition-all cursor-pointer flex items-center gap-2 active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New prompt</span>
-            </button>
-          </div>
         </div>
 
         {/* Card Container */}
@@ -414,7 +355,7 @@ export default function PromptHistoryTab({ user }) {
                   required
                   value={newPromptName}
                   onChange={(e) => setNewPromptName(e.target.value)}
-                  placeholder="e.g. [SHOWCASE] API Security Vulnerability Triage"
+                  placeholder="e.g. API Security Vulnerability Triage"
                   className="w-full px-3.5 py-2.5 bg-[#080d14] border border-[#202e40] rounded-xl text-xs text-white placeholder-[#5d7185] focus:border-[#38bdf8] focus:outline-none"
                 />
               </div>
