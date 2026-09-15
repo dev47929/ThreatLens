@@ -7,27 +7,36 @@ from db.usage import patch_usage
 from fastapi.responses import StreamingResponse
 
 
+def _normalize_url(url: str) -> str:
+    cleaned = (url or "").strip().rstrip("/")
+    if cleaned.endswith("/chat/completions"):
+        cleaned = cleaned[:-len("/chat/completions")].rstrip("/")
+    return cleaned
+
+
 def _get_provider_chain():
     """Returns an ordered list of available providers (primary first, then configured fallbacks)."""
     chain = []
     # Primary
-    if config.LLM_PROVIDER_API_KEY:
+    if config.LLM_PROVIDER_BASE_URL:
         chain.append({
             "name": "primary",
-            "url": config.LLM_PROVIDER_BASE_URL,
-            "api_key": config.LLM_PROVIDER_API_KEY,
+            "url": _normalize_url(config.LLM_PROVIDER_BASE_URL),
+            "api_key": config.LLM_PROVIDER_API_KEY or "",
             "default_model": config.DEFAULT_MODEL,
         })
 
     # Add other configured providers as fallback
     for name, p in PROVIDERS.items():
-        if p.get("api_key") and p.get("api_key") != config.LLM_PROVIDER_API_KEY:
-            chain.append({
-                "name": name,
-                "url": p["url"],
-                "api_key": p["api_key"],
-                "default_model": p.get("default_model") or "llama-3.3-70b-versatile",
-            })
+        prov_url = _normalize_url(p.get("url") or "")
+        if prov_url and prov_url != _normalize_url(config.LLM_PROVIDER_BASE_URL or ""):
+            if p.get("api_key") or name == "custom":
+                chain.append({
+                    "name": name,
+                    "url": prov_url,
+                    "api_key": p.get("api_key") or "",
+                    "default_model": p.get("default_model") or "llama3",
+                })
     return chain
 
 
@@ -39,7 +48,7 @@ async def chat_completion(body):
     providers = _get_provider_chain()
     if not providers:
         # No configured provider found
-        err_msg = "No LLM API key configured on backend. Please configure OPENROUTER_API_KEY or GROQ_API_KEY."
+        err_msg = "No LLM provider configured on backend. Please configure custom LLM, OPENROUTER_API_KEY, or GROQ_API_KEY."
         if body.stream:
             async def err_stream():
                 yield f"data: {json.dumps({'error': err_msg})}\n\n"
@@ -78,10 +87,11 @@ async def _normal_completion(
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {prov['api_key']}",
             "HTTP-Referer": "https://threatlens.io",
             "X-Title": "ThreatLensGo Security Agent",
         }
+        if prov.get("api_key"):
+            headers["Authorization"] = f"Bearer {prov['api_key']}"
 
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
@@ -132,10 +142,11 @@ async def _stream_completion(
 
             headers = {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {prov['api_key']}",
                 "HTTP-Referer": "https://threatlens.io",
                 "X-Title": "ThreatLensGo Security Agent",
             }
+            if prov.get("api_key"):
+                headers["Authorization"] = f"Bearer {prov['api_key']}"
 
             try:
                 async with httpx.AsyncClient(timeout=120.0) as client:

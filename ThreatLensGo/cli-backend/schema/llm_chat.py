@@ -31,3 +31,15 @@ class PatchUsageRequest(BaseModel):
     prompt_tokens: int
     completion_tokens: int
 
+
+class CustomProviderRequest(BaseModel):
+    base_url: str
+    api_key: str | None = ""
+    default_model: str
+
+
+class TestConnectionRequest(BaseModel):
+    base_url: str
+    api_key: str | None = ""
+    model: str | None = None
+

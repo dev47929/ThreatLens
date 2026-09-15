@@ -97,19 +97,20 @@ def patch_usage(
     return get_usage()
 
 
-def sync_usage():
-    usage = get_usage()
+def sync_usage(body: dict | None = None):
+    if body is None:
+        usage = get_usage()
 
-    if usage is None:
-        return {
-            "status": "unable to sync usage",
-            "error": "No usage record found",
+        if usage is None:
+            return {
+                "status": "unable to sync usage",
+                "error": "No usage record found",
+            }
+
+        body = {
+            "prompt_tokens": usage["prompt_tokens"],
+            "completion_tokens": usage["completion_tokens"],
         }
-
-    body = {
-        "prompt_tokens": usage["prompt_tokens"],
-        "completion_tokens": usage["completion_tokens"],
-    }
 
     try:
         response = global_sync_usage(body=body)
