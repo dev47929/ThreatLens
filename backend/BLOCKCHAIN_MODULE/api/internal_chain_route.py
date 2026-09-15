@@ -20,7 +20,7 @@ router = APIRouter(
 @router.post("/build")
 def setup_chain(
     config: ChainRequest,
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     chain: InternalChain = build_chain(
         config=config.model_dump(),
@@ -34,7 +34,7 @@ def setup_chain(
 
 @router.get("")
 def get_chains(
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     return {
         "chains": InternalChain.get_chains(user),
@@ -63,7 +63,7 @@ def get_chain(
     chain_id: str,
     page: int = Query(1, ge=1, le=100),
     limit: int = Query(10, ge=1, le=100),
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     chain: InternalChain = InternalChain(
         chain_name=chain_id,
@@ -78,7 +78,7 @@ def get_chain(
 @router.get("/{chain_id}/latest")
 def get_latest_block(
     chain_id: str,
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     chain : InternalChain = InternalChain(
         chain_name=chain_id,
@@ -100,7 +100,7 @@ def verify_chain(
         "full",
         "last",
     ] = Query("last"),
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     chain: InternalChain = InternalChain(
         chain_name=chain_id,
@@ -117,7 +117,7 @@ def verify_chain(
 def validate_and_replace_chain(
     chain_id: str,
     chain_data: ChainData,
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     chain: InternalChain = InternalChain(
         chain_name=chain_id,
@@ -139,7 +139,7 @@ def validate_and_replace_chain(
 @router.delete("/{chain_id}")
 def remove_chain(
     chain_id: str,
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     return InternalChain.destroy_chain(
         chain_id=chain_id,

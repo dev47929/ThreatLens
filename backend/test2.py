@@ -269,4 +269,5 @@ attack ={
   }
 
 
-send_attack_report(email="atharvthakre37@gmail.com",attack=attack)
+# send_attack_report(email="atharvthakre37@gmail.com",attack=attack)
+destroy()

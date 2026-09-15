@@ -16,7 +16,7 @@ router = APIRouter(
 
 @router.get("")
 def get_account_usage(
-    user=Depends(auth.deps.get_current),
+    user=Depends(auth.deps.get_current_user),
 ):
     account_id = user["account"]["id"]
     return get_usage(
@@ -27,7 +27,7 @@ def get_account_usage(
 @router.put("")
 def update_account_usage(
     body : UsageUpdateRequest,
-    user=Depends(auth.deps.get_current),
+    user=Depends(auth.deps.get_current_user),
 ):
     account_id = user["account"]["id"]
 

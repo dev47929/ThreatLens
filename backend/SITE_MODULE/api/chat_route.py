@@ -84,7 +84,7 @@ def get_history(
 )
 def create_new_chat(
     body: CreateChatRequest,
-    account: int = Depends(auth.deps.get_current),
+    account: int = Depends(auth.deps.get_current_user),
 ):
     chat = create_chat(
         account_id=account["account"]["id"],
@@ -97,7 +97,7 @@ def create_new_chat(
 
 @router.get("")
 def get_all_chats(
-    account: int = Depends(auth.deps.get_current),
+    account: int = Depends(auth.deps.get_current_user),
 ):
     return get_chats(
         account_id=account["account"]["id"],
@@ -110,7 +110,7 @@ def get_all_chats(
 )
 def remove_chat(
     chat_id: int,
-    account: int = Depends(auth.deps.get_current),
+    account: int = Depends(auth.deps.get_current_user),
 ):
     deleted = delete_chat(
         account_id=account["account"]["id"],

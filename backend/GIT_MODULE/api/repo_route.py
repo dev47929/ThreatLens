@@ -39,7 +39,7 @@ router = APIRouter(
 )
 def upsert_repository_api(
     request: RepositoryUpsertRequest,
-    account=Depends(auth.deps.get_current),
+    account=Depends(auth.deps.get_current_user),
 ):
     return upsert_repository(
         account_id=account["account"]["id"],
@@ -55,7 +55,7 @@ def get_repositories_api(
     repo_id: int | None = None,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
-    account=Depends(auth.deps.get_current),
+    account=Depends(auth.deps.get_current_user),
 ):
     return get_repositories(
         account_id=account["account"]["id"],
@@ -75,7 +75,7 @@ def get_raw_commit_analysis(
     repo_id: int,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
-    account=Depends(auth.deps.get_current),
+    account=Depends(auth.deps.get_current_user),
 ):
     data = get_commit_analysis(
         repo_id=repo_id,
@@ -97,7 +97,7 @@ def get_raw_commit_analysis(
 def store_raw_commit_analysis(
     repo_id: int,
     request: CommitAnalysisRequest,
-    account=Depends(auth.deps.get_current),
+    account=Depends(auth.deps.get_current_user),
 ):
     store_commit_analysis(
         data=request.data,

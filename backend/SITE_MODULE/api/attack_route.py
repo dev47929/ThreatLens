@@ -17,7 +17,7 @@ router = APIRouter(
 @router.post("")
 def post_attack_route(
     attack: AttackCreate,
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     return post_attack(
         user=user,
@@ -30,7 +30,7 @@ def get_attack_route(
     attack_type: str = None,
     page: int = 1,
     limit: int = 10,
-    user: dict = Depends(auth.deps.get_current),
+    user: dict = Depends(auth.deps.get_current_user),
 ):
     account_id = user["account"]["id"]
 
