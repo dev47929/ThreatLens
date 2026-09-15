@@ -74,22 +74,6 @@ export default function RepositoriesTab({ onSelectRepo, onInspectCommit }) {
             GET /repo · {repos.length} codebases monitored · automated AST static analysis & branch tracking
           </p>
         </div>
-        <div className="flex items-center gap-3 text-xs">
-          <button
-            onClick={handleExportRepoSummary}
-            className="px-4 py-2 rounded-lg border border-[#2b3947] bg-[#10151a] text-[#d8e2e8] hover:border-white/[0.2] hover:bg-[#141b21] shadow-sm transition-all cursor-pointer flex items-center gap-2 font-medium"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export Manifest</span>
-          </button>
-          <button
-            onClick={() => toast.info("Importing repository from GitHub/GitLab...")}
-            className="px-4 py-2 rounded-lg bg-[#2962FF] hover:bg-[#1e4ed8] text-white font-semibold shadow-[0_0_15px_rgba(41,98,255,0.35)] transition-all cursor-pointer flex items-center gap-2"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Repository</span>
-          </button>
-        </div>
       </div>
 
       {/* KPI Ribbon */}
