@@ -23,7 +23,9 @@ def global_sync_usage(body):
         json=body,
         headers=get_header(),
     )
+
     response.raise_for_status()
+
     return response.json()
 
 

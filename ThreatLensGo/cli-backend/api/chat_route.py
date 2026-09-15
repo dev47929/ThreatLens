@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, BackgroundTasks, Query
 from typing import Literal
+from db.usage import get_usage
 
 from db.usage import sync_usage
 from schema.llm_chat import (
@@ -50,11 +51,18 @@ def remove_chat(
 @router.post("/history")
 def save_history(
     data: ChatHistoryRequest,
+    bg: BackgroundTasks,
 ):
-    try :
-        sync_usage()
-    except :
-        pass
+    usage = get_usage()
+
+    if usage:
+        body = {
+            "prompt_tokens": usage["prompt_tokens"],
+            "completion_tokens": usage["completion_tokens"],
+        }
+
+        bg.add_task(sync_usage, body)
+
     return save_chat_history(
         chat_id=data.chat_id,
         messages=data.messages,
