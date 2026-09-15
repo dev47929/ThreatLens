@@ -218,6 +218,47 @@ export class BackendAPIClient {
     return this.request<LimitData>('/llm/limit');
   }
 
+  async getLlmProvider(): Promise<{
+    current: { provider: string | null; base_url: string; default_model: string };
+    available: Record<string, { base_url: string; default_model: string; configured: boolean }>;
+  }> {
+    return this.request<{
+      current: { provider: string | null; base_url: string; default_model: string };
+      available: Record<string, { base_url: string; default_model: string; configured: boolean }>;
+    }>('/llm/provider');
+  }
+
+  async setLlmProvider(provider: string): Promise<any> {
+    return this.request<any>(`/llm/provider?provider=${encodeURIComponent(provider)}`, {
+      method: 'PATCH',
+    });
+  }
+
+  async setCustomLlmProvider(config: {
+    base_url: string;
+    api_key?: string;
+    default_model: string;
+  }): Promise<any> {
+    return this.request<any>('/llm/provider/custom', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    });
+  }
+
+  async testLlmProvider(config: {
+    base_url: string;
+    api_key?: string;
+    model?: string;
+  }): Promise<{ success: boolean; status_code: number | null; message: string; endpoint?: string }> {
+    return this.request<{ success: boolean; status_code: number | null; message: string; endpoint?: string }>(
+      '/llm/provider/test',
+      {
+        method: 'POST',
+        body: JSON.stringify(config),
+      }
+    );
+  }
+
   // --- Attacks (same shape for each type) ---
   async startAttack(type: AttackType, config: any, options?: RequestInit): Promise<{ attack_id: string; status: string }> {
     return this.request<{ attack_id: string; status: string }>(`/attack/${type}`, {

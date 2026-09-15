@@ -14,6 +14,7 @@ export type Screen =
   | { type: 'proxy' }
   | { type: 'chatHistory' }
   | { type: 'theme' }
+  | { type: 'llmConfig' }
   | { type: 'agentChat'; chatId?: number; initialPrompt?: string };
 
 export type ScreenType = Screen['type'];

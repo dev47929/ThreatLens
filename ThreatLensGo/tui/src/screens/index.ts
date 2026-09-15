@@ -12,4 +12,5 @@ export { ProxyScreen } from './ProxyScreen.js';
 export { ChatHistoryScreen } from './ChatHistoryScreen.js';
 export { AgentChatScreen } from './AgentChatScreen.js';
 export { ThemeScreen } from './ThemeScreen.js';
+export { LlmConfigScreen } from './LlmConfigScreen.js';
 

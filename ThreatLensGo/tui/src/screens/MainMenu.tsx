@@ -26,6 +26,7 @@ type CommandAction =
   | 'proxy'
   | 'targetUrl'
   | 'theme'
+  | 'llmConfig'
   | 'exit';
 
 interface CommandItem {
@@ -44,6 +45,11 @@ const COMMANDS: CommandItem[] = [
     label: 'T. 🎨 Theme Options (Switch theme just like Claude: claude, dark, light, daltonized, etc.)',
     value: 'theme',
     shortcut: 't',
+  },
+  {
+    label: 'L. 🧠 LLM / Local AI Setup (Base URL, Token, and Model for Ollama/LM Studio/vLLM)',
+    value: 'llmConfig',
+    shortcut: 'l',
   },
   {
     label: 'H. 📜 Chat History (Restore or review previous agent conversations)',
@@ -122,6 +128,8 @@ export const MainMenu: React.FC = () => {
     }
     if (item.value === 'theme') {
       push({ type: 'theme' });
+    } else if (item.value === 'llmConfig') {
+      push({ type: 'llmConfig' });
     } else if (item.value === 'agentChat') {
       push({ type: 'agentChat' });
     } else if (item.value === 'chatHistory') {
@@ -167,6 +175,11 @@ export const MainMenu: React.FC = () => {
       return;
     }
 
+    if (trimmed.startsWith('/llm') || trimmed.startsWith('llm') || trimmed.startsWith('/model') || trimmed.startsWith('model')) {
+      push({ type: 'llmConfig' });
+      return;
+    }
+
     if (trimmed.includes('agent') || trimmed === '/agent' || trimmed.startsWith('fix') || trimmed.startsWith('audit') || trimmed.startsWith('search')) {
       push({ type: 'agentChat', initialPrompt: value.trim() });
     } else if (trimmed.includes('history') || trimmed === '/history') {
@@ -206,30 +219,9 @@ export const MainMenu: React.FC = () => {
         setFocusMode((prev) => (prev === 'menu' ? 'input' : 'menu'));
       } else if (focusMode === 'menu') {
         // Direct single-key shortcuts when menu is active
-        if (input === '0') {
-          handleSelect(COMMANDS[0]);
-        } else if (input === 't' || input === 'T') {
-          push({ type: 'theme' });
-        } else if (input === 'h' || input === 'H') {
-          push({ type: 'chatHistory' });
-        } else if (input === '1') {
-          handleSelect(COMMANDS[3]);
-        } else if (input === '2') {
-          handleSelect(COMMANDS[4]);
-        } else if (input === '3') {
-          handleSelect(COMMANDS[5]);
-        } else if (input === '4') {
-          handleSelect(COMMANDS[6]);
-        } else if (input === '5') {
-          handleSelect(COMMANDS[7]);
-        } else if (input === '6') {
-          handleSelect(COMMANDS[8]);
-        } else if (input === '7') {
-          handleSelect(COMMANDS[9]);
-        } else if (input === '8') {
-          handleSelect(COMMANDS[10]);
-        } else if (input === '9') {
-          handleSelect(COMMANDS[11]);
+        const matched = COMMANDS.find((c) => c.shortcut && c.shortcut.toLowerCase() === input.toLowerCase());
+        if (matched) {
+          handleSelect(matched);
         } else if (input === 'q') {
           exit();
         } else if (input === '/' || input === ':') {

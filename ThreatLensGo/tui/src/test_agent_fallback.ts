@@ -52,7 +52,7 @@ async function runTests() {
   const tier1_401 = new FailingMockLLMClient('Upstream Error (401): {"error":{"message":"Missing Authentication header","code":401}}');
   const tier2_success = new SuccessfulMockLLMClient('Remediation plan generated successfully via fallback.');
 
-  let switchReported = false;
+  let switchReported: boolean = false;
   let switchedFrom = '';
   let switchedTo = '';
 
@@ -81,7 +81,7 @@ async function runTests() {
 
   console.assert(tier1_401.attempts === 1, 'Tier 1 should have been attempted once');
   console.assert(tier2_success.attempts === 1, 'Tier 2 should have been invoked after Tier 1 failure');
-  console.assert(switchReported === true, 'onTierSwitched callback should fire');
+  console.assert((switchReported as any) === true, 'onTierSwitched callback should fire');
   console.assert(switchedFrom === 'Backend Gateway', `Switched from ${switchedFrom}`);
   console.assert(switchedTo === 'Direct OpenRouter', `Switched to ${switchedTo}`);
   console.assert(res1.content === 'Remediation plan generated successfully via fallback.', 'Response should match Tier 2 output');

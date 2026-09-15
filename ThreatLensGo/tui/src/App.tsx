@@ -21,6 +21,7 @@ import {
   ChatHistoryScreen,
   AgentChatScreen,
   ThemeScreen,
+  LlmConfigScreen,
 } from './screens/index.js';
 
 export const ScreenRenderer: React.FC = () => {
@@ -53,6 +54,8 @@ export const ScreenRenderer: React.FC = () => {
       return <ChatHistoryScreen />;
     case 'theme':
       return <ThemeScreen />;
+    case 'llmConfig':
+      return <LlmConfigScreen />;
     case 'agentChat':
       return <AgentChatScreen chatId={current.chatId} initialPrompt={current.initialPrompt} />;
     default: {
