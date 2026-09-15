@@ -26,7 +26,7 @@ def get_jwt():
         ).fetchone()
 
         # return row[0] if row else None
-        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhaWQiOjEsInNpZCI6MTMsInRva2VuIjoiNDRqUVkxazY2bE5rTklCWDByUFFWRkVDaDVva1VZWVRNODFGOVlEdENON0ZsY3dDU04tdGRGWVdqbGJaTGUtOSIsImV4cCI6MTc4OTI5ODU4Mn0.Xjdi53ANJxAdMSCUzcQsQHiJpxqpiyC-ZRHOApeqdOo"
+        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhaWQiOjEsInNpZCI6OTAsInRva2VuIjoiMDh6S3pnNk1oWFF4d3BJc25ZYzFlRlRQYkdvY2t2VzVaNTJaZnBUSk9kRWRZTDI4a1NoZWh6SzVkaGFRNVBUUiIsInR5cGUiOiJhY2Nlc3MiLCJleHAiOjE3OTAwNjI0Nzh9.PJoYVbK3YKeNXPGJuXARY1hHxeA1lUnNA_YF3TwRIsg"
     finally:
         conn.close()
 
