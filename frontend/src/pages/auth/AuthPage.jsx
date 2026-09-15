@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -307,7 +308,7 @@ export default function AuthPage({ initialMode = "signup" }) {
                   <button key={m} type="button" onClick={() => setMethod(m)}
                     className={"px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-medium " +
                       (method === m
-                        ? "bg-[#1e3cff]/20 text-[#4facfe] border border-[#1e3cff]/30"
+                        ? "bg-black text-[#d8e2ec] border border-white/15"
                         : "text-[#4d6070] hover:text-[#8ea4be] border border-transparent")}>
                     {m === "password" ? "Password" : "Email OTP"}
                   </button>

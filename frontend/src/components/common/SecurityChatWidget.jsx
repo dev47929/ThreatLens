@@ -309,22 +309,19 @@ export default function SecurityChatWidget() {
               aria-label="Open ThreatLens Security Chatbot"
               className="relative flex items-center justify-center w-14 h-14 rounded-full bg-[#0a0f1d] border border-cyan-500/40 text-cyan-400 shadow-2xl shadow-cyan-950/80 hover:border-cyan-400 hover:text-cyan-300 hover:scale-105 active:scale-95 transition-all duration-200"
             >
-              <div className="relative">
-                <Shield className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
-                <Bot className="w-3.5 h-3.5 text-emerald-400 absolute -bottom-1 -right-1" />
+              <div className="relative flex items-center justify-center">
+                <img
+                  src="/chatbot-logo.png"
+                  alt="Security Intelligence AI"
+                  className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(6,182,212,0.6)] transition-transform duration-300 group-hover:scale-110"
+                />
               </div>
 
-              {/* Status Ping */}
-              <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-[#0a0f1d]" />
-              </span>
             </button>
 
             {/* Hover Tooltip */}
             <div className="absolute right-16 top-1/2 -translate-y-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#0f172a] border border-cyan-500/30 text-xs font-medium text-cyan-300 shadow-xl shadow-black/80">
               <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                 Security Intelligence AI
               </span>
             </div>
@@ -345,8 +342,12 @@ export default function SecurityChatWidget() {
             {/* Window Header */}
             <div className="relative px-4 py-3.5 bg-[#0e1424] border-b border-cyan-500/20 flex items-center justify-between select-none">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-inner">
-                  <Shield className="w-5 h-5 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-inner p-1">
+                  <img
+                    src="/chatbot-logo.png"
+                    alt="ThreatLens AI"
+                    className="w-6 h-6 object-contain drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]"
+                  />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -383,8 +384,12 @@ export default function SecurityChatWidget() {
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col justify-center space-y-4">
                   <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-950/30 via-[#0f172a]/60 to-blue-950/20 border border-cyan-500/20 text-center space-y-2">
-                    <div className="w-10 h-10 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                      <Sparkles className="w-5 h-5" />
+                    <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center p-2">
+                      <img
+                        src="/chatbot-logo.png"
+                        alt="ThreatLens AI"
+                        className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]"
+                      />
                     </div>
                     <h4 className="text-sm font-semibold text-white">
                       Cybersecurity Intelligence Agent
@@ -427,7 +432,11 @@ export default function SecurityChatWidget() {
                     <div className="flex items-center gap-1.5 mb-1 px-1 text-[10px] text-slate-400">
                       {msg.role === "assistant" ? (
                         <>
-                          <ShieldCheck className="w-3 h-3 text-cyan-400" />
+                          <img
+                            src="/chatbot-logo.png"
+                            alt=""
+                            className="w-3.5 h-3.5 object-contain"
+                          />
                           <span className="font-semibold text-cyan-400">
                             ThreatLens AI
                           </span>
