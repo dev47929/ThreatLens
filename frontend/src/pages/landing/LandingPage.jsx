@@ -253,12 +253,6 @@ function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link
-                href="/signin"
-                className="text-[#8a99ad] hover:text-[#EAF2F8] font-medium text-[14px] px-3 py-1.5 rounded-lg hover:bg-white/[0.04] transition-all"
-              >
-                Sign In
-              </Link>
               <Link className="button button-primary nav-cta flex items-center gap-1.5" href="/signup">
                 <span>Sign Up</span> <ArrowRight size={14} />
               </Link>
@@ -333,7 +327,6 @@ function Navbar() {
           </div>
         ) : (
           <div className="flex flex-col gap-2 pt-2">
-            <Link onClick={closeMenu} href="/signin" className="button button-ghost text-center">Sign In</Link>
             <Link onClick={closeMenu} href="/signup" className="button button-primary text-center justify-center flex items-center gap-1.5">
               <span>Sign Up</span> <ArrowRight size={16} />
             </Link>

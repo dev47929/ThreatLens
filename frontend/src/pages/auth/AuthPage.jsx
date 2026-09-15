@@ -6,7 +6,7 @@ import {
   KeyRound, Lock, Mail, RefreshCw, ShieldAlert,
   User,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ThreatLensLogo } from "@/components/common/ThreatLensLogo";
@@ -55,22 +55,6 @@ export default function AuthPage({ initialMode = "signup" }) {
       return () => clearTimeout(t);
     }
   }, [otpCountdown]);
-
-  const passwordStrength = useMemo(() => {
-    if (!password) return 0;
-    let s = 0;
-    if (password.length >= 8)           s += 25;
-    if (/[A-Z]/.test(password))         s += 25;
-    if (/[0-9]/.test(password))         s += 25;
-    if (/[^A-Za-z0-9]/.test(password))  s += 25;
-    return s;
-  }, [password]);
-
-  const pwLabel = ["", "Weak", "Fair", "Good", "Strong"][passwordStrength / 25] || "";
-  const pwColor =
-    passwordStrength <= 25 ? "#f87171" :
-    passwordStrength <= 50 ? "#fbbf24" :
-    passwordStrength <= 75 ? "#60a5fa" : "#34d399";
 
   const handleSendOtp = async () => {
     if (!email) { toast.error("Enter your email first."); return; }
@@ -374,19 +358,6 @@ export default function AuthPage({ initialMode = "signup" }) {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {mode === "signup" && password && (
-                      <div className="mt-1.5 space-y-1">
-                        <div className="flex gap-1">
-                          {[1,2,3,4].map((i) => (
-                            <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
-                              style={{ background: i <= passwordStrength/25 ? pwColor : "rgba(255,255,255,0.07)" }} />
-                          ))}
-                        </div>
-                        <p className="text-[10px]" style={{ color: pwColor }}>
-                          {pwLabel} — mix of letters, numbers & symbols
-                        </p>
-                      </div>
-                    )}
                   </Field>
 
                   {mode === "signup" && (
