@@ -1,86 +1,100 @@
 import httpx
-from db import get_db
+from .connection import get_db
 from service.system_service import global_sync_usage
 
-db = get_db()
 
 def set_usage(
     prompt_tokens: int,
     completion_tokens: int,
 ):
-    
-    total_tokens = prompt_tokens + completion_tokens 
-
-    db.execute(
-        """
-        UPDATE usage
-        SET
-            prompt_tokens = ?,
-            completion_tokens = ?,
-            total_tokens = ?,
-            updated_at = unixepoch()
-        WHERE id = 1
-        """,
-        (
-            prompt_tokens,
-            completion_tokens,
-            total_tokens,
-        ),
-    )
-
-    db.commit()
+    total_tokens = prompt_tokens + completion_tokens
+    conn = get_db()
+    try:
+        conn.execute(
+            """
+            INSERT INTO usage (id, prompt_tokens, completion_tokens, total_tokens, updated_at)
+            VALUES (1, ?, ?, ?, unixepoch())
+            ON CONFLICT(id) DO UPDATE SET
+                prompt_tokens = excluded.prompt_tokens,
+                completion_tokens = excluded.completion_tokens,
+                total_tokens = excluded.total_tokens,
+                updated_at = unixepoch()
+            """,
+            (
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def get_usage():
-    cursor = db.execute(
-        """
-        SELECT
-            prompt_tokens,
-            completion_tokens,
-            total_tokens,
-            synced_at,
-            updated_at
-        FROM usage
-        WHERE id = 1
-        """
-    )
-    row = cursor.fetchone()
-    if row is None :
-        return None
-    return {
-        "prompt_tokens":row[0],
-        "completion_tokens":row[1],
-        "total_tokens":row[2],
-        "synced_at":row[3],
-        "updated_at":row[4]
-    }
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            """
+            SELECT
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                synced_at,
+                updated_at
+            FROM usage
+            WHERE id = 1
+            """
+        )
+        row = cursor.fetchone()
+        if row is None:
+            return {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "synced_at": None,
+                "updated_at": None,
+            }
+        return {
+            "prompt_tokens": row[0] or 0,
+            "completion_tokens": row[1] or 0,
+            "total_tokens": row[2] or 0,
+            "synced_at": row[3],
+            "updated_at": row[4],
+        }
+    finally:
+        conn.close()
 
 
 def patch_usage(
     prompt_tokens: int,
     completion_tokens: int,
-    total_tokens: int = 0
+    total_tokens: int = 0,
 ):
+    added_total = total_tokens if total_tokens > 0 else (prompt_tokens + completion_tokens)
+    conn = get_db()
+    try:
+        conn.execute(
+            """
+            INSERT INTO usage (id, prompt_tokens, completion_tokens, total_tokens, updated_at)
+            VALUES (1, ?, ?, ?, unixepoch())
+            ON CONFLICT(id) DO UPDATE SET
+                prompt_tokens = usage.prompt_tokens + excluded.prompt_tokens,
+                completion_tokens = usage.completion_tokens + excluded.completion_tokens,
+                total_tokens = usage.total_tokens + excluded.total_tokens,
+                updated_at = unixepoch()
+            """,
+            (
+                prompt_tokens,
+                completion_tokens,
+                added_total,
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
-    total_tokens = prompt_tokens + completion_tokens 
-    db.execute(
-        """
-        UPDATE usage
-        SET
-            prompt_tokens = prompt_tokens + ?,
-            completion_tokens = completion_tokens + ?,
-            total_tokens = total_tokens + ?,
-            updated_at = unixepoch()
-        WHERE id = 1
-        """,
-        (
-            prompt_tokens,
-            completion_tokens,
-            total_tokens,
-        ),
-    )
-
-    db.commit()
+    return get_usage()
 
 
 def sync_usage():
@@ -88,71 +102,79 @@ def sync_usage():
 
     if usage is None:
         return {
-            "status": "unable to sync usage"
+            "status": "unable to sync usage",
+            "error": "No usage record found",
         }
 
     body = {
         "prompt_tokens": usage["prompt_tokens"],
-        "completion_tokens": usage["completion_tokens"]
+        "completion_tokens": usage["completion_tokens"],
     }
 
     try:
         response = global_sync_usage(body=body)
 
-        db.execute(
-            """
-            UPDATE usage
-            SET synced_at = unixepoch()
-            WHERE id = 1
-            """
-        )
-
-        db.commit()
+        conn = get_db()
+        try:
+            conn.execute(
+                """
+                UPDATE usage
+                SET synced_at = unixepoch()
+                WHERE id = 1
+                """
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
         return {
             "status": "usage synced",
-            "response": response
+            "response": response,
         }
 
     except httpx.HTTPError as e:
         return {
             "status": "unable to sync usage",
-            "error": str(e)
+            "error": str(e),
+        }
+    except Exception as e:
+        return {
+            "status": "unable to sync usage",
+            "error": str(e),
         }
 
 
 def reset_usage():
-    row = db.execute(
-        """
-        SELECT updated_at
-        FROM usage
-        WHERE id = 1
-        """
-    ).fetchone()
+    conn = get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT updated_at
+            FROM usage
+            WHERE id = 1
+            """
+        ).fetchone()
 
-    if row is None:
-        return
+        if row is not None and row[0] is not None:
+            time_diff = conn.execute(
+                "SELECT unixepoch() - ?",
+                (row[0],)
+            ).fetchone()[0]
+            if time_diff < 86400:
+                return
 
-    updated_at = row[0]
-
-    if updated_at is not None:
-        if db.execute(
-            "SELECT unixepoch() - ?",
-            (updated_at,)
-        ).fetchone()[0] < 86400:
-            return
-
-    db.execute(
-        """
-        UPDATE usage
-        SET
-            prompt_tokens = 0,
-            completion_tokens = 0,
-            total_tokens = 0,
-            synced_at = unixepoch(),
-            updated_at = unixepoch()
-        WHERE id = 1
-        """
-    )
-
-    db.commit()
+        conn.execute(
+            """
+            INSERT INTO usage (id, prompt_tokens, completion_tokens, total_tokens, synced_at, updated_at)
+            VALUES (1, 0, 0, 0, unixepoch(), unixepoch())
+            ON CONFLICT(id) DO UPDATE SET
+                prompt_tokens = 0,
+                completion_tokens = 0,
+                total_tokens = 0,
+                synced_at = unixepoch(),
+                updated_at = unixepoch()
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()

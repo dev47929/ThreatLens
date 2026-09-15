@@ -2,7 +2,7 @@
 
 Base URL:
 
-- http://localhost:8000
+- https://api.codesena.me
 
 These routes are defined in `backend/SITE_MODULE/api/usage_route.py` and are mounted under the `/usage` prefix.
 
@@ -39,7 +39,7 @@ The response shape depends on the database model and may include `null` values f
 #### Sample fetch
 
 ```js
-fetch("http://localhost:8000/usage", {
+fetch(`${BASE_URL}/usage`, {
   headers: {
     "Authorization": "Bearer <token>"
   }
@@ -89,7 +89,7 @@ Fields:
 #### Sample fetch
 
 ```js
-fetch("http://localhost:8000/usage", {
+fetch(`${BASE_URL}/usage`, {
   method: "PUT",
   headers: {
     "Content-Type": "application/json",

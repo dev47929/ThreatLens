@@ -6,7 +6,7 @@ const API_BASE_URL =
 export const CLI_API_BASE_URL =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_CLI_API_URL) ||
   "http://localhost:1234";
-const SECTEST_BASE = "http://localhost:8765";
+const SECTEST_BASE = "http://localhost:8765";   
 
 export function normalizeRouteType(type) {
   if (!type) return "ddos";
@@ -572,6 +572,62 @@ export const attackApi = {
     } catch {
       return false;
     }
+  },
+};
+
+// ── Account Usage & Token Telemetry API ──
+export const usageApi = {
+  // Get current usage record for authenticated account
+  async getUsage(token = null) {
+    const authToken =
+      token ||
+      (typeof window !== "undefined" ? localStorage.getItem("threatlens_token") : null);
+
+    const headers = {
+      Accept: "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    const url = `${API_BASE_URL}/usage`;
+    const res = await fetch(url, { headers });
+    
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.detail || err?.message || `Failed to fetch usage: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data || typeof data !== "object") {
+      throw new Error("Failed to fetch token usage: Invalid response received from backend");
+    }
+    return data;
+  },
+
+  // Update account usage counters and subscription plan
+  async updateUsage(payload, token = null) {
+    const authToken =
+      token ||
+      (typeof window !== "undefined" ? localStorage.getItem("threatlens_token") : null);
+
+    const headers = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    };
+
+    const url = `${API_BASE_URL}/usage`;
+    const res = await fetch(url, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.detail || err?.message || `Failed to update usage: ${res.status}`);
+    }
+
+    return await res.json();
   },
 };
 
