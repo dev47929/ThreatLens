@@ -412,8 +412,8 @@ function PipelineVisual() {
 }
 
 function HeroTypewriter() {
-  const line1Text = "Secure every commit";
-  const line2Text = "Prove every result";
+  const line1Text = "Produce secure backend";
+  const line2Text = "Prove every architecture";
 
   const [displayedLine1, setDisplayedLine1] = useState("");
   const [displayedLine2, setDisplayedLine2] = useState("");
