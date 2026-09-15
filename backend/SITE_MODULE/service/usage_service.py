@@ -39,7 +39,6 @@ def set_usage(
     }
 
 
-
 def get_usage(
     account_id: int,
 ):
@@ -49,3 +48,26 @@ def get_usage(
         .filter(Usage.account_id == account_id)
         .first()
     )
+
+
+def set_plan(
+    account_id: int,
+    plan : str
+):
+    db = session_factory()
+    usage = (
+        db.query(Usage)
+        .filter(Usage.account_id == account_id)
+        .first()
+    )
+
+    if usage is None:
+        return {
+            "status" : "account not found"
+        }
+
+    usage.plan = plan
+    db.commit()
+    return {
+        "status" : "plan updated"
+    }
